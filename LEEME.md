@@ -50,6 +50,7 @@ el .apk. Del zip que te da, copiá assetlinks.json a una carpeta
 
 ## CHANGELOG
 
+L3 · 2026-09-10 — La pestaña Trabajo pasa a hablar de ventas: cantidad por precio, cobradas en el momento (sirve para una feria) o a plazo, como las facturas de antes. Nuevo "Pasar a lo personal": lo ya cobrado se suma a Ingresos del mes en el renglón "Del trabajo" y cuenta como cualquier ingreso.
 L2 · 2026-09-10 — Modo cuenta propia, primera parte: en Ajustes se prende "Trabajo por mi cuenta" y aparece la pestaña Trabajo, con facturas a plazo, lo vencido y lo que entra en 30 días, y "Entró un pago", que sugiere de qué facturas es un cobro y separa retención de saldo pendiente. Va en la copia de seguridad y no toca los números del mes. El deslizamiento entre pestañas pasa por Trabajo solo si el modo está prendido, y ya no se traba cuando el dedo arranca sobre un renglón cortado con puntos suspensivos.
 L1 · 2026-09-10 — Nace la Lab a partir de la v1.28: mismo motor, pero con datos, caché e historial de copias separados de la app real, ícono violeta y nombre "kibFinanzas Lab" para no confundirlas en el teléfono.
 v1.28 · 2026-09-09 — Se cambia de pestaña deslizando el dedo para los costados, sin tocar los botones de abajo. El gesto respeta lo que ya se mueve al costado (la tira de meses, las tablas anchas) y no actúa con una hoja abierta. Dentro de una subpantalla de Ajustes, deslizar a la derecha vuelve al principio.

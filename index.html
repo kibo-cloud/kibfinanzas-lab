@@ -320,6 +320,13 @@ button.tj-f:active{background:var(--fill)}
 .tj-sug{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:6px;background:var(--acc-soft);color:var(--acc);margin-right:4px}
 .tj-vacio{padding:16px;font-size:14px;color:var(--txt2);line-height:1.45}
 .tj-det{margin-bottom:10px}
+.tj-dos{display:flex;gap:8px}
+#v-trabajo .tri div{display:flex;flex-direction:column;justify-content:flex-end}
+.tj-pasar{display:block;width:100%;margin-top:14px;min-height:46px;border-radius:13px;background:var(--acc-soft);color:var(--acc);font-size:15px;font-weight:600;position:relative}
+.tj-dos .campo{flex:1;min-width:0}
+.tj-total{font-size:15px;color:var(--txt2);margin:-4px 4px 14px}
+.tj-total b{color:var(--txt);font-weight:700}
+.saldo .final>small+small,.saldo .final>div+small{display:block;margin-top:6px}
 .tj-det div{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--sep);font-size:15px}
 .tj-det div:last-child{border-bottom:0}
 .tj-det span{color:var(--txt2)}
@@ -1552,7 +1559,7 @@ nav button.on .np{background:var(--acc-soft)}
 var M1 = '/*DATOS_' + 'INICIO*/';
 var M2 = '/*DATOS_' + 'FIN*/';
 
-var APPVER   = 'L2 · base v1.28';    // versión visible en Ajustes (LAB)
+var APPVER   = 'L3 · base v1.28';    // versión visible en Ajustes (LAB)
 var PREF     = 'kibolab.datos.';    // LAB: prefijo propio para no tocar los datos de la app real (kibo.datos.AAAA)
 var LSANIO   = 'kibolab.anio';
 var LSCOPIA  = 'kibolab.ultimaCopia';
@@ -2561,9 +2568,10 @@ function manual(){
     + '<li>Patrimonio = ahorro en pesos ÷ cotización + dólares + cripto</li></ul>'
     + '<p>Los ceros se muestran como "—". Los negativos van entre paréntesis y en rojo.</p>');
   h += bloque('trabajo', 'Trabajo por tu cuenta',
-      '<p>Si facturás por tu cuenta, prendé <b>Trabajo por mi cuenta</b> en Ajustes y aparece la pestaña <b>Trabajo</b>. Si la apagás, no se borra nada.</p>'
-    + '<p>Cargás cada factura con el cliente, el monto y a cuántos días te paga. Cuando entra plata, tocás <b>Entró un pago</b>: la app busca qué facturas pendientes de ese cliente suman ese monto. Si falta hasta un 10 %, probablemente es una retención; si falta más, la factura queda con saldo.</p>'
-    + '<p>Deslizando el dedo también llegás a Trabajo: queda entre USD y Ajustes. Por ahora lo del trabajo va aparte: lo cobrado no se suma a Ingresos del mes.</p>');
+      '<p>Si vendés o facturás por tu cuenta, prendé <b>Trabajo por mi cuenta</b> en Ajustes y aparece la pestaña <b>Trabajo</b>. Si la apagás, no se borra nada. Deslizando el dedo también llegás a ella: queda entre USD y Ajustes.</p>'
+    + '<p>Cada venta lleva qué vendiste, la cantidad y el precio. Si te pagaron en el momento, queda cobrada y listo: sirve igual para un puesto en la feria. Si te pagan después, anotás a quién y a cuántos días, y queda en <b>Por cobrar</b>.</p>'
+    + '<p>Cuando entra plata de una venta a plazo, tocás <b>Entró un pago</b>: la app busca qué ventas de ese cliente suman ese monto. Si falta hasta un 10 %, probablemente es una retención; si falta más, la venta queda con saldo.</p>'
+    + '<p><b>Pasar a lo personal</b> manda plata de lo cobrado a Ingresos del mes, al renglón <b>Del trabajo</b>, y desde ahí cuenta como cualquier ingreso: suma al disponible final y al ahorro. Solo se puede pasar lo que ya cobraste. Si borrás un pase, se descuenta de ese renglón; si cambiás ese renglón a mano en Mes, la app no se entera.</p>');
   h += '</div>';
   return h;
 }
@@ -3615,19 +3623,24 @@ function aviso(html, cerrable){
     + (cerrable === false ? '' : '<div class="fila"><button class="mini" data-act="cerrarAviso">Entendido</button></div>')
     + '</div>';
 }
-/* ═══ 15 · modo cuenta propia: facturas, plazos y cobros ════════════ */
-// Vive aparte de los años: una sola clave para todo el trabajo, porque una factura
-// de noviembre se cobra en febrero. Los datos del mes personal no se tocan.
+/* ═══ 15 · modo cuenta propia: ventas, plazos y cobros ═══════════════ */
+// Vive aparte de los años: una sola clave para todo el trabajo, porque una venta
+// de noviembre se puede cobrar en febrero. La unidad es la venta: cobrada en el momento
+// (contado) o a plazo (con cliente, factura y vencimiento). Por compatibilidad la lista
+// se sigue llamando "facturas" en los datos.
 var LSTRAB = 'kibolab.trabajo';          // LAB: en la app real va a ser kibo.trabajo
 var T = null;
 var FORMAS = [['transferencia','Transferencia'],['echeq','Echeq'],['efectivo','Efectivo'],['otra','Otra']];
 var PLAZOS = [0, 30, 45, 60, 90];
 var RETENCION_MAX = 0.10;                // si falta hasta un 10 %, probablemente es una retención
-var fx = null, cb = null, tjAntes = null;
+var fx = null, cb = null, tjAntes = null, paseQuitado = null;
+var RENGLON_TRABAJO = 'Del trabajo';   // el renglón de Ingresos donde cae lo que pasás a lo personal
 ICO.maletin = '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg>';
 ICOSEC.tjPend = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 ICOSEC.tjCob  = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
 ICOSEC.tjSald = '<svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5.2L19.5 7"/></svg>';
+ICOSEC.tjVent = '<svg viewBox="0 0 24 24"><path d="M6 3h12l2 5-8 13L4 8z"/></svg>';
+ICOSEC.tjPases = '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
 function tjId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function dos(x){ return (x<10?'0':'')+x; }
@@ -3644,13 +3657,15 @@ function val(id){ var e = document.getElementById(id); return e ? String(e.value
 
 function normTrab(t){
   t = t && typeof t === 'object' ? t : {};
-  var o = {version:1, activo: t.activo === true, actualizado: String(t.actualizado || ''), facturas:[], cobros:[], ui:{col:{}}};
+  var o = {version:1, activo: t.activo === true, actualizado: String(t.actualizado || ''), facturas:[], cobros:[], pases:[], ui:{col:{}}};
   var fs = Array.isArray(t.facturas) ? t.facturas : [], cs = Array.isArray(t.cobros) ? t.cobros : [], i, j;
   for(i=0;i<fs.length;i++){
     var f = fs[i]; if(!f || typeof f !== 'object') continue;
+    var mo = Math.max(0, num(f.monto)), ca = num(f.cantidad) > 0 ? num(f.cantidad) : 1;
     o.facturas.push({id:String(f.id || tjId()), cliente:String(f.cliente || '').trim(), numero:String(f.numero || '').trim(),
-      concepto:String(f.concepto || '').trim(), monto:Math.max(0, num(f.monto)), fecha: esISO(f.fecha) ? f.fecha : hoyISO(),
-      plazo:Math.max(0, Math.round(num(f.plazo))), forma:formaValida(f.forma), creada:String(f.creada || '')});
+      concepto:String(f.concepto || '').trim(), monto:mo, cantidad:ca, precio: num(f.precio) > 0 ? num(f.precio) : mo / ca,
+      contado: f.contado === true, fecha: esISO(f.fecha) ? f.fecha : hoyISO(),
+      plazo: f.contado === true ? 0 : Math.max(0, Math.round(num(f.plazo))), forma:formaValida(f.forma), creada:String(f.creada || '')});
   }
   for(i=0;i<cs.length;i++){
     var c = cs[i]; if(!c || typeof c !== 'object') continue;
@@ -3659,7 +3674,16 @@ function normTrab(t){
     o.cobros.push({id:String(c.id || tjId()), cliente:String(c.cliente || '').trim(), monto:Math.max(0, num(c.monto)),
       fecha: esISO(c.fecha) ? c.fecha : hoyISO(), forma:formaValida(c.forma), aplic:ap, creada:String(c.creada || '')});
   }
+  var ps = Array.isArray(t.pases) ? t.pases : [];
+  for(i=0;i<ps.length;i++){
+    var p = ps[i]; if(!p || typeof p !== 'object') continue;
+    var pf = esISO(p.fecha) ? p.fecha : hoyISO();
+    o.pases.push({id:String(p.id || tjId()), fecha:pf, monto:Math.max(0, Math.round(num(p.monto))),
+      anio: Math.round(num(p.anio)) || +pf.slice(0,4), mes: p.mes == null ? +pf.slice(5,7) - 1 : Math.min(11, Math.max(0, Math.round(num(p.mes)))),
+      creada:String(p.creada || '')});
+  }
   if(t.ui && t.ui.col && typeof t.ui.col === 'object') for(var k in t.ui.col) if(t.ui.col.hasOwnProperty(k)) o.ui.col[k] = !!t.ui.col[k];
+  o.ui.pago = t.ui && t.ui.pago === 'despues' ? 'despues' : 'ahora';   // lo último que elegiste en "¿Ya te pagaron?"
   return o;
 }
 function leerTrab(){ try{ var s = localStorage.getItem(LSTRAB); return normTrab(s ? JSON.parse(s) : null); }catch(e){ return normTrab(null); } }
@@ -3670,7 +3694,7 @@ function guardarTrab(silencio){
   if(!silencio) pildora('Cambios guardados');
   return true;
 }
-function tieneTrab(){ return !!(T && (T.facturas.length || T.cobros.length)); }
+function tieneTrab(){ return !!(T && (T.facturas.length || T.cobros.length || T.pases.length)); }
 function antesDeCambiar(){ tjAntes = JSON.stringify(T); }
 function deshacerTj(){
   if(!tjAntes) return;
@@ -3690,7 +3714,7 @@ function aplicado(fid, sinCobro){
   }
   return t;
 }
-function saldoFac(f, sinCobro){ return Math.max(0, Math.round(f.monto - aplicado(f.id, sinCobro))); }
+function saldoFac(f, sinCobro){ if(f.contado) return 0; return Math.max(0, Math.round(f.monto - aplicado(f.id, sinCobro))); }
 function venceFac(f){ return sumarDias(f.fecha, f.plazo); }
 function sinAsignar(c){ var t = 0; for(var j=0;j<c.aplic.length;j++) t += c.aplic[j].m; return Math.max(0, Math.round(c.monto - t)); }
 function porVencimiento(a, b){ var x = venceFac(a), y = venceFac(b); return x < y ? -1 : x > y ? 1 : 0; }
@@ -3700,17 +3724,34 @@ function pendientes(sinCobro){
   return out.sort(porVencimiento);
 }
 function resumenTrab(){
-  var hoy = hoyISO(), mesAct = hoy.slice(0,7), r = {porCobrar:0, vencido:0, prox30:0, cobradoMes:0, sinAsignar:0}, i;
+  var hoy = hoyISO(), mesAct = hoy.slice(0,7), i;
+  var r = {porCobrar:0, vencido:0, prox30:0, cobradoMes:0, sinAsignar:0, hoyVendido:0, hoyVentas:0, mesVendido:0,
+           cobrado:0, aAcreditar:0, hayPlazo:false};
   for(i=0;i<T.facturas.length;i++){
-    var f = T.facturas[i], s = saldoFac(f); if(!s) continue;
+    var f = T.facturas[i];
+    if(f.fecha === hoy){ r.hoyVendido += f.monto; r.hoyVentas++; }
+    if(f.fecha.slice(0,7) === mesAct) r.mesVendido += f.monto;
+    if(f.contado){
+      // cobrada en el momento: es plata que ya entró (o que entra ese día, si la fecha es futura)
+      if(f.fecha <= hoy) r.cobrado += f.monto; else r.aAcreditar += f.monto;
+      if(f.fecha.slice(0,7) === mesAct) r.cobradoMes += f.monto;
+      continue;
+    }
+    r.hayPlazo = true;
+    var s = saldoFac(f); if(!s) continue;
     var d = diasEntre(hoy, venceFac(f));
     r.porCobrar += s;
     if(d < 0) r.vencido += s; else if(d <= 30) r.prox30 += s;
   }
   for(i=0;i<T.cobros.length;i++){
-    if(T.cobros[i].fecha.slice(0,7) === mesAct) r.cobradoMes += T.cobros[i].monto;
-    r.sinAsignar += sinAsignar(T.cobros[i]);
+    var c = T.cobros[i];
+    if(c.fecha.slice(0,7) === mesAct) r.cobradoMes += c.monto;
+    if(c.fecha <= hoy) r.cobrado += c.monto; else r.aAcreditar += c.monto;   // un echeq con fecha futura todavía no es plata
+    r.sinAsignar += sinAsignar(c);
   }
+  r.pasado = 0; r.pasadoMes = 0;
+  for(i=0;i<T.pases.length;i++){ r.pasado += T.pases[i].monto; if(T.pases[i].fecha.slice(0,7) === mesAct) r.pasadoMes += T.pases[i].monto; }
+  r.disponible = Math.round(r.cobrado - r.pasado);
   return r;
 }
 function mismoCliente(a, b){ return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase(); }
@@ -3719,7 +3760,13 @@ function clientes(){
   for(i=0;i<T.facturas.length;i++){ n = T.facturas[i].cliente; if(n && !visto[n.toLowerCase()]){ visto[n.toLowerCase()] = 1; out.push(n); } }
   return out.sort();
 }
-function nomFac(f){ var t = f.numero ? 'Factura ' + f.numero : ''; if(f.concepto) t += (t ? ' · ' : '') + f.concepto; return t || 'Factura del ' + fDia(f.fecha); }
+function cantTxt(n){ n = num(n); return (Math.round(n*100)/100).toString().replace('.', ','); }
+function queFue(f){ return f.concepto ? f.concepto + (f.cantidad !== 1 ? ' × ' + cantTxt(f.cantidad) : '') : ''; }
+function nomFac(f){
+  var q = queFue(f);
+  if(f.numero) return 'Factura ' + f.numero + (q ? ' · ' + q : '');
+  return q || 'Venta del ' + fDia(f.fecha);
+}
 function txtVence(f){
   var d = diasEntre(hoyISO(), venceFac(f));
   if(d < 0) return {t:'Venció hace ' + (-d) + (d === -1 ? ' día' : ' días'), mal:true};
@@ -3805,42 +3852,63 @@ function filaFac(f){
 }
 function filaCobro(c){
   var sa = sinAsignar(c), n = c.aplic.length;
-  var det = fDia(c.fecha) + ' · ' + nombreForma(c.forma) + (n ? ' · ' + n + (n === 1 ? ' factura' : ' facturas') : '') + (sa ? ' · sin identificar ' + fARS(sa) : '');
+  var det = fDia(c.fecha) + ' · ' + nombreForma(c.forma) + (n ? ' · ' + n + (n === 1 ? ' venta' : ' ventas') : '') + (sa ? ' · sin identificar ' + fARS(sa) : '');
   return '<button class="tj-f" data-act="tjVerCobro" data-id="' + esc(c.id) + '"><span class="tx">'
        + '<b>' + esc(c.cliente || 'Sin identificar') + '</b><small class="' + (sa ? 'mal' : '') + '">' + det + '</small></span>'
        + '<span class="mt">' + fARS(c.monto) + '</span></button>';
 }
+function filaVenta(f){
+  var s = saldoFac(f), v = txtVence(f);
+  var det = fDia(f.fecha) + ' · ' + (f.contado ? 'Cobrada al momento · ' + nombreForma(f.forma)
+                                              : (f.cliente || 'Sin cliente') + ' · ' + (s ? v.t : 'Cobrada'));
+  return '<button class="tj-f" data-act="tjVerFac" data-id="' + esc(f.id) + '"><span class="tx">'
+       + '<b>' + esc(nomFac(f)) + '</b><small class="' + (s && v.mal ? 'mal' : '') + '">' + esc(det) + '</small></span>'
+       + '<span class="mt' + (s ? '' : ' mudo') + '">' + fARS(f.monto) + '</span></button>';
+}
 function renderTrabajo(){
   var v = document.getElementById('v-trabajo'); if(!v) return;
   var r = resumenTrab(), h = '', i;
+  var neg = r.disponible < 0, mc = MESES[new Date().getMonth()].slice(0,3).toLowerCase() + '.';
   h += '<div class="saldo"><div class="tri">'
-     +   '<div><small>Vencido</small><b class="' + (r.vencido && !oculto ? 'neg' : '') + '">' + fARS(r.vencido) + '</b></div>'
-     +   '<div><small>Próx. 30 días</small><b>' + fARS(r.prox30) + '</b></div>'
-     +   '<div><small>Cobrado este mes</small><b>' + fARS(r.cobradoMes) + '</b></div></div>'
-     +   '<div class="final"><small>Por cobrar</small><div class="final-fila"><div class="big" id="tjPorCobrar">' + fARS(r.porCobrar) + '</div></div></div></div>';
-  h += '<div class="tj-acc"><button data-act="tjNuevaFac">Nueva factura</button><button class="pri" data-act="tjNuevoCobro">Entró un pago</button></div>';
-  if(r.sinAsignar) h += '<div class="aviso"><p>Tenés <b>' + fARS(r.sinAsignar) + '</b> cobrados sin identificar. Tocá ese cobro en la lista y elegí de qué facturas es.</p></div>';
-  if(!T.facturas.length && !T.cobros.length){
-    h += '<div class="lista tj-vacio" style="margin-top:12px">Cargá tu primera factura: a quién, cuánto y a cuántos días te paga. Cuando entre plata, tocás <b>Entró un pago</b> y te ayudo a saber de qué es.</div>';
+     +   '<div><small>Hoy vendiste</small><b>' + fARS(r.hoyVendido) + '</b></div>'
+     +   '<div><small>Cobrado en ' + mc + '</small><b>' + fARS(r.cobradoMes) + '</b></div>'
+     +   '<div><small>Pasado en ' + mc + '</small><b>' + fARS(r.pasadoMes) + '</b></div></div>'
+     +   '<div class="final"><small>Disponible del trabajo</small><div class="final-fila"><div class="big ' + (neg ? 'mal' : 'ok') + '" id="tjDisp">' + fARS(r.disponible) + '</div></div>'
+     +   '<small>Lo cobrado (' + fARS(r.cobrado) + ') menos lo que ya pasaste a Ingresos (' + fARS(r.pasado) + ').</small>'
+     +   (neg ? '<small class="neg">Pasaste a lo personal más de lo que figura cobrado: fijate si borraste alguna venta.</small>' : '')
+     +   (r.aAcreditar ? '<small>Además entran ' + fARS(r.aAcreditar) + ' con fecha más adelante (echeqs diferidos, por ejemplo).</small>' : '')
+     +   '<button class="tj-pasar" data-act="tjPasar">Pasar a lo personal</button>'
+     + '</div></div>';
+  h += '<div class="tj-acc"><button class="pri" data-act="tjNuevaFac">Nueva venta</button>'
+     + (r.hayPlazo || T.cobros.length ? '<button data-act="tjNuevoCobro">Entró un pago</button>' : '') + '</div>';
+  if(r.sinAsignar) h += '<div class="aviso"><p>Tenés <b>' + fARS(r.sinAsignar) + '</b> cobrados sin identificar. Tocá ese cobro en la lista y elegí qué ventas te estaba pagando.</p></div>';
+  if(!T.facturas.length && !T.cobros.length && !T.pases.length){
+    h += '<div class="lista tj-vacio" style="margin-top:12px">Cargá tu primera venta: qué vendiste, cuánto y si ya te pagaron. Sirve igual para un puesto en la feria que para facturas a 90 días.</div>';
   } else {
-    var pend = pendientes(), hp = '', hc = '', hs = '', cob = T.cobros.slice(), sald = [];
+    var pend = pendientes(), hp = '', hc = '', hv = '', cob = T.cobros.slice(), ven = T.facturas.slice();
     for(i=0;i<pend.length;i++) hp += filaFac(pend[i]);
     cob.sort(function(a, b){ return a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : (a.creada < b.creada ? 1 : -1); });
     for(i=0;i<cob.length && i<30;i++) hc += filaCobro(cob[i]);
-    for(i=0;i<T.facturas.length;i++) if(!saldoFac(T.facturas[i])) sald.push(T.facturas[i]);
-    sald.sort(function(a, b){ return a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0; });
-    for(i=0;i<sald.length && i<30;i++){
-      var f = sald[i];
-      hs += '<button class="tj-f" data-act="tjVerFac" data-id="' + esc(f.id) + '"><span class="tx"><b>' + esc(f.cliente || 'Sin cliente') + '</b>'
-          + '<small>' + esc(nomFac(f)) + ' · ' + fDia(f.fecha) + '</small></span><span class="mt mudo">' + fARS(f.monto) + '</span></button>';
+    ven.sort(function(a, b){ return a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : (a.creada < b.creada ? 1 : -1); });
+    for(i=0;i<ven.length && i<40;i++) hv += filaVenta(ven[i]);
+    if(r.hayPlazo){
+      var cab = '<div class="nota" style="padding:10px 14px">Vencido <b class="' + (r.vencido && !oculto ? 'neg' : '') + '">' + fARS(r.vencido) + '</b> · entra en 30 días <b>' + fARS(r.prox30) + '</b></div>';
+      h += plegTj('tjPend', 'Por cobrar', pend.length ? fARS(r.porCobrar) : '', pend.length ? cab + hp : '<div class="tj-vacio">No tenés nada pendiente de cobro.</div>');
     }
-    h += plegTj('tjPend', 'Por cobrar', pend.length ? String(pend.length) : '', hp || '<div class="tj-vacio">No tenés nada pendiente de cobro.</div>');
-    h += plegTj('tjCob', 'Cobros', cob.length ? String(cob.length) : '', (hc || '<div class="tj-vacio">Todavía no cargaste ningún cobro.</div>')
-       + (cob.length > 30 ? '<div class="nota">Se muestran los 30 más nuevos.</div>' : ''));
-    h += plegTj('tjSald', 'Cobradas', sald.length ? String(sald.length) : '', (hs || '<div class="tj-vacio">Cuando cobres una factura entera, pasa acá.</div>')
-       + (sald.length > 30 ? '<div class="nota">Se muestran las 30 más nuevas.</div>' : ''), false);
+    h += plegTj('tjVent', 'Ventas', ven.length ? String(ven.length) : '', (hv || '<div class="tj-vacio">Todavía no cargaste ninguna venta.</div>')
+       + (ven.length > 40 ? '<div class="nota">Se muestran las 40 más nuevas.</div>' : ''));
+    if(cob.length) h += plegTj('tjCob', 'Cobros de ventas a plazo', String(cob.length), hc
+       + (cob.length > 30 ? '<div class="nota">Se muestran los 30 más nuevos.</div>' : ''), false);
+    if(T.pases.length){
+      var pa = T.pases.slice(), hpa = '', anioHoy = new Date().getFullYear();
+      pa.sort(function(a, b){ return a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : (a.creada < b.creada ? 1 : -1); });
+      for(i=0;i<pa.length && i<30;i++) hpa += '<button class="tj-f" data-act="tjVerPase" data-id="' + esc(pa[i].id) + '"><span class="tx">'
+        + '<b>A Ingresos de ' + MESES[pa[i].mes] + (pa[i].anio !== anioHoy ? ' ' + pa[i].anio : '') + '</b><small>' + fDia(pa[i].fecha) + '</small></span>'
+        + '<span class="mt">' + fARS(pa[i].monto) + '</span></button>';
+      h += plegTj('tjPases', 'A lo personal', fARS(r.pasado), hpa, false);
+    }
   }
-  h += '<div class="nota" style="padding:14px 6px 4px">Por ahora el trabajo va aparte: lo cobrado no se suma a Ingresos del mes.</div>';
+  h += '<div class="nota" style="padding:14px 6px 4px">Lo que pasás a lo personal aparece en la pestaña Mes, dentro de Ingresos, como “' + RENGLON_TRABAJO + '”.</div>';
   v.innerHTML = h;
 }
 
@@ -3864,62 +3932,96 @@ function chipsPlazo(otro){
   var h = '';
   for(var i=0;i<PLAZOS.length;i++){
     var p = PLAZOS[i];
-    h += '<button data-act="tjFxPlazo" data-v="' + p + '" class="' + (!otro && fx.plazo === p ? 'on' : '') + '">' + (p ? p + ' días' : 'Contado') + '</button>';
+    h += '<button data-act="tjFxPlazo" data-v="' + p + '" class="' + (!otro && fx.plazo === p ? 'on' : '') + '">' + (p ? p + ' días' : 'Mismo día') + '</button>';
   }
   return h + '<button data-act="tjFxPlazo" data-v="otro" class="' + (otro ? 'on' : '') + '">Otro</button>';
 }
 function abrirFactura(id){
   var f = id ? facPorId(id) : null;
-  fx = {id: f ? f.id : null, plazo: f ? f.plazo : 30, forma: f ? f.forma : 'transferencia'};
+  fx = {id: f ? f.id : null, plazo: f && !f.contado ? f.plazo : 30, forma: f ? f.forma : (T.ui.pago === 'despues' ? 'transferencia' : 'efectivo'),
+        pago: f ? (f.contado ? 'ahora' : 'despues') : T.ui.pago};
   var otro = PLAZOS.indexOf(fx.plazo) < 0;
-  abrirHoja('<h3>' + (f ? 'Editar factura' : 'Nueva factura') + '</h3>'
-    + campoTj('Cliente', '<input type="text" id="fxCliente" class="tj-in" list="tjClientes" autocomplete="off" placeholder="A quién le facturaste" value="' + (f ? esc(f.cliente) : '') + '">')
-    + campoTj('Monto', '<input type="text" id="fxMonto" class="tj-in" inputmode="decimal" autocomplete="off" placeholder="0" value="' + (f ? montoInput(f.monto) : '') + '">')
-    + campoTj('Número de factura (si querés)', '<input type="text" id="fxNumero" class="tj-in" autocomplete="off" placeholder="0012" value="' + (f ? esc(f.numero) : '') + '">')
-    + campoTj('Qué es (si querés)', '<input type="text" id="fxConcepto" class="tj-in" autocomplete="off" placeholder="Placas, reparación, abono…" value="' + (f ? esc(f.concepto) : '') + '">')
-    + campoTj('Fecha de la factura', '<input type="date" id="fxFecha" class="tj-in" value="' + (f ? f.fecha : hoyISO()) + '">')
-    + '<label class="tj-lb">A cuántos días te paga</label><div class="chips" id="fxPlazo">' + chipsPlazo(otro) + '</div>'
-    + '<input type="text" id="fxDias" class="tj-in" inputmode="numeric" autocomplete="off" placeholder="Cantidad de días" style="display:' + (otro ? 'block' : 'none') + '" value="' + (otro ? fx.plazo : '') + '">'
-    + '<label class="tj-lb">Cómo te paga</label><div class="chips" id="fxForma">' + chipsForma(fx.forma, 'tjFxForma') + '</div>'
+  abrirHoja('<h3>' + (f ? 'Editar venta' : 'Nueva venta') + '</h3>'
+    + campoTj('Qué vendiste (si querés)', '<input type="text" id="fxConcepto" class="tj-in" autocomplete="off" placeholder="Aros, placas, reparación…" value="' + (f ? esc(f.concepto) : '') + '">')
+    + '<div class="tj-dos">'
+    +   campoTj('Cantidad', '<input type="text" id="fxCant" class="tj-in" inputmode="decimal" autocomplete="off" placeholder="1" value="' + (f && f.cantidad !== 1 ? cantTxt(f.cantidad) : '') + '">')
+    +   campoTj('Precio por unidad', '<input type="text" id="fxPrecio" class="tj-in" inputmode="decimal" autocomplete="off" placeholder="0" value="' + (f ? montoInput(f.precio) : '') + '">')
+    + '</div>'
+    + '<div class="tj-total" id="fxTotal"></div>'
+    + '<label class="tj-lb">¿Ya te pagaron?</label>'
+    + '<div class="seg" id="fxPago" style="margin-bottom:14px"><button data-act="tjVtPago" data-v="ahora" class="' + (fx.pago === 'ahora' ? 'on' : '') + '">Sí, ahora</button>'
+    +   '<button data-act="tjVtPago" data-v="despues" class="' + (fx.pago === 'despues' ? 'on' : '') + '">Me pagan después</button></div>'
+    + campoTj('Fecha', '<input type="date" id="fxFecha" class="tj-in" value="' + (f ? f.fecha : hoyISO()) + '">')
+    + '<div class="campo"><label id="fxClienteLb"></label><input type="text" id="fxCliente" class="tj-in" list="tjClientes" autocomplete="off" placeholder="Nombre o empresa" value="' + (f ? esc(f.cliente) : '') + '"></div>'
+    + '<div id="fxDespues">'
+    +   campoTj('Número de factura (si facturás)', '<input type="text" id="fxNumero" class="tj-in" autocomplete="off" placeholder="0012" value="' + (f ? esc(f.numero) : '') + '">')
+    +   '<label class="tj-lb">A cuántos días te paga</label><div class="chips" id="fxPlazo">' + chipsPlazo(otro) + '</div>'
+    +   '<input type="text" id="fxDias" class="tj-in" inputmode="numeric" autocomplete="off" placeholder="Cantidad de días" style="display:' + (otro ? 'block' : 'none') + '" value="' + (otro ? fx.plazo : '') + '">'
+    + '</div>'
+    + '<label class="tj-lb" id="fxFormaLb"></label><div class="chips" id="fxForma">' + chipsForma(fx.forma, 'tjFxForma') + '</div>'
     + '<div class="nota" id="fxNota" style="padding:0 0 14px"></div>'
     + '<div class="fila">' + (f ? '<button class="mal" data-act="tjBorrarFac" data-id="' + esc(f.id) + '">Borrar</button>' : '<button data-act="cerrarHoja">Cancelar</button>')
     + '<button class="pri" data-act="tjGuardarFac">Guardar</button></div>' + datalistClientes());
   var fe = document.getElementById('fxFecha'), di = document.getElementById('fxDias');
   fe.addEventListener('input', notaFx); fe.addEventListener('change', notaFx);
   di.addEventListener('input', function(){ fx.plazo = Math.max(0, Math.round(parseNum(di.value))); notaFx(); });
+  document.getElementById('fxCant').addEventListener('input', totalFx);
+  document.getElementById('fxPrecio').addEventListener('input', totalFx);
+  modoPagoFx(); totalFx();
+  if(!f) document.getElementById('fxPrecio').focus();
+}
+function totalFx(){
+  var e = document.getElementById('fxTotal'); if(!e) return;
+  var c = parseNum(val('fxCant')), p = parseNum(val('fxPrecio')) || 0; if(!(c > 0)) c = 1; var t = Math.round(c * p);
+  e.innerHTML = t > 0 ? (c !== 1 ? cantTxt(c) + ' × ' + fARS(p) + ' = ' : 'Total ') + '<b>' + fARS(t) + '</b>' : 'Poné la cantidad y el precio y te hago la cuenta.';
+}
+function modoPagoFx(){
+  var despues = fx.pago === 'despues';
+  document.getElementById('fxDespues').style.display = despues ? 'block' : 'none';
+  document.getElementById('fxClienteLb').textContent = despues ? 'A quién le vendiste' : 'A quién (si querés)';
+  document.getElementById('fxFormaLb').textContent = despues ? 'Cómo te va a pagar' : 'Cómo te pagaron';
   notaFx();
-  if(!f) document.getElementById('fxCliente').focus();
 }
 function notaFx(){
   var e = document.getElementById('fxNota'); if(!e) return;
   var fe = val('fxFecha'); if(!esISO(fe)) fe = hoyISO();
   e.className = 'nota';
-  e.innerHTML = fx.plazo ? 'Te la tienen que pagar el <b>' + fDia(sumarDias(fe, fx.plazo)) + '</b>, a ' + fx.plazo + ' días de la factura.' : 'Se cobra en el momento.';
+  if(fx.pago !== 'despues'){ e.innerHTML = 'Queda como cobrada: la plata ya cuenta como tuya.'; return; }
+  e.innerHTML = fx.plazo ? 'Te la tienen que pagar el <b>' + fDia(sumarDias(fe, fx.plazo)) + '</b>, a ' + fx.plazo + ' días.' : 'Te la pagan el mismo día, pero queda pendiente hasta que cargues el cobro.';
 }
 function errorEn(id, txt){ var e = document.getElementById(id); if(e){ e.className = id === 'cbRes' ? 'tj-res mal' : 'nota mal'; e.innerHTML = txt; } }
 function guardarFac(){
-  var cli = val('fxCliente').trim(), m = Math.round(parseNum(val('fxMonto'))), fe = val('fxFecha');
-  if(!cli){ errorEn('fxNota', 'Falta a quién le facturaste.'); document.getElementById('fxCliente').focus(); return; }
-  if(!(m > 0)){ errorEn('fxNota', 'Falta el monto de la factura.'); document.getElementById('fxMonto').focus(); return; }
+  var despues = fx.pago === 'despues', cli = val('fxCliente').trim(), fe = val('fxFecha');
+  var ca = parseNum(val('fxCant')), pr = parseNum(val('fxPrecio'));
+  if(!(ca > 0)) ca = 1;
+  var m = Math.round(ca * pr);
+  if(!(m > 0)){ errorEn('fxNota', 'Falta el precio.'); document.getElementById('fxPrecio').focus(); return; }
+  if(despues && !cli){ errorEn('fxNota', 'Si te pagan después, necesito saber quién te debe.'); document.getElementById('fxCliente').focus(); return; }
   if(!esISO(fe)) fe = hoyISO();
   var viejo = fx.id ? facPorId(fx.id) : null;
-  if(viejo){ var ya = aplicado(viejo.id); if(m < ya - 0.5){ errorEn('fxNota', 'Ya tiene ' + fARS(ya) + ' cobrados: el monto no puede ser menor.'); return; } }
+  if(viejo){
+    var ya = aplicado(viejo.id);
+    if(!despues && ya > 0.5){ errorEn('fxNota', 'Esta venta ya tiene ' + fARS(ya) + ' cobrados en "Entró un pago". Borrá ese cobro antes de marcarla como cobrada en el momento.'); return; }
+    if(m < ya - 0.5){ errorEn('fxNota', 'Ya tiene ' + fARS(ya) + ' cobrados: el total no puede ser menor.'); return; }
+  }
   antesDeCambiar();
-  var datos = {cliente:cli, numero:val('fxNumero').trim(), concepto:val('fxConcepto').trim(), monto:m, fecha:fe, plazo:fx.plazo, forma:fx.forma};
+  var datos = {concepto:val('fxConcepto').trim(), cantidad:ca, precio:pr, monto:m, fecha:fe, cliente:cli, contado:!despues,
+               numero: despues ? val('fxNumero').trim() : '', plazo: despues ? fx.plazo : 0, forma:fx.forma};
   if(viejo){ for(var k in datos) viejo[k] = datos[k]; }
   else { datos.id = tjId(); datos.creada = new Date().toISOString(); T.facturas.push(datos); }
+  T.ui.pago = fx.pago;
   guardarTrab(true); cerrarHoja(); renderTrabajo();
-  toast(viejo ? 'Factura actualizada' : 'Factura de ' + esc(cli) + ' guardada', 'Deshacer', 'tjDeshacer');
+  toast(viejo ? 'Venta actualizada' : 'Venta de ' + fARS(m) + ' guardada', 'Deshacer', 'tjDeshacer');
 }
 function borrarFac(id){
   var f = facPorId(id); if(!f) return;
   var ya = aplicado(f.id);
-  confirmar('Borrar la factura', ya ? 'Tiene ' + fARS(ya) + ' cobrados. Esos cobros no se borran: quedan como sin identificar.' : 'Se borra ' + esc(nomFac(f)) + ' de ' + esc(f.cliente || 'sin cliente') + '.', 'Borrar', function(){
+  confirmar('Borrar la venta', ya ? 'Tiene ' + fARS(ya) + ' cobrados. Esos cobros no se borran: quedan como sin identificar.' : 'Se borra ' + esc(nomFac(f)) + ' (' + fARS(f.monto) + ').', 'Borrar', function(){
     antesDeCambiar();
     T.facturas = T.facturas.filter(function(x){ return x.id !== id; });
     for(var i=0;i<T.cobros.length;i++) T.cobros[i].aplic = T.cobros[i].aplic.filter(function(a){ return a.f !== id; });
     guardarTrab(true); renderTrabajo();
-    toast('Factura borrada', 'Deshacer', 'tjDeshacer');
+    toast('Venta borrada', 'Deshacer', 'tjDeshacer');
   });
 }
 function renglon(a, b){ return '<div><span>' + a + '</span><b>' + b + '</b></div>'; }
@@ -3932,14 +4034,26 @@ function verFactura(id){
     hc += '<button class="tj-f" data-act="tjVerCobro" data-id="' + esc(c.id) + '"><span class="tx"><b>' + fDia(c.fecha) + ' · ' + nombreForma(c.forma) + '</b>'
         + (a.r ? '<small>Retención ' + fARS(a.r) + '</small>' : '') + '</span><span class="mt">' + fARS(a.m) + '</span></button>';
   }
+  if(f.contado){
+    abrirHoja('<h3>' + esc(queFue(f) || 'Venta') + '</h3><div class="tj-det">'
+      + (f.cantidad !== 1 ? renglon('Cantidad', cantTxt(f.cantidad) + ' × ' + fARS(f.precio)) : '')
+      + renglon('Total', fARS(f.monto)) + renglon('Fecha', fDia(f.fecha))
+      + renglon('Cobrada', 'Al momento · ' + nombreForma(f.forma))
+      + (f.cliente ? renglon('A quién', esc(f.cliente)) : '')
+      + '</div><div class="fila"><button class="mal" data-act="tjBorrarFac" data-id="' + esc(f.id) + '">Borrar</button>'
+      + '<button class="pri" data-act="tjEditarFac" data-id="' + esc(f.id) + '">Editar</button></div>');
+    return;
+  }
   abrirHoja('<h3>' + esc(f.cliente || 'Sin cliente') + '</h3><div class="tj-det">'
-    + renglon('Factura', esc(nomFac(f))) + renglon('Monto', fARS(f.monto)) + renglon('Fecha', fDia(f.fecha))
-    + renglon('Plazo', f.plazo ? f.plazo + ' días · ' + fDia(venceFac(f)) : 'Contado')
+    + renglon('Venta', esc(nomFac(f)))
+    + (f.cantidad !== 1 ? renglon('Cantidad', cantTxt(f.cantidad) + ' × ' + fARS(f.precio)) : '')
+    + renglon('Total', fARS(f.monto)) + renglon('Fecha', fDia(f.fecha))
+    + renglon('Plazo', f.plazo ? f.plazo + ' días · ' + fDia(venceFac(f)) : 'El mismo día')
     + renglon('Cómo te paga', nombreForma(f.forma))
     + (rec ? renglon('Cobrado', fARS(rec)) : '') + (ret ? renglon('Retenido', fARS(ret)) : '')
     + renglon('Falta cobrar', s ? '<span class="' + (v.mal && !oculto ? 'neg' : '') + '">' + fARS(s) + '</span>' : '<span class="ok">Nada, está cobrada</span>')
     + '</div>' + (s ? '<div class="nota ' + (v.mal ? 'mal' : '') + '" style="padding:0 2px 12px">' + v.t + '.</div>' : '')
-    + (hc ? '<label class="tj-lb">Cobros de esta factura</label><div class="tj-caja">' + hc + '</div>' : '')
+    + (hc ? '<label class="tj-lb">Cobros de esta venta</label><div class="tj-caja">' + hc + '</div>' : '')
     + '<div class="fila"><button class="mal" data-act="tjBorrarFac" data-id="' + esc(f.id) + '">Borrar</button>'
     + '<button class="pri" data-act="tjEditarFac" data-id="' + esc(f.id) + '">Editar</button></div>');
 }
@@ -3953,7 +4067,7 @@ function abrirCobro(id){
     + campoTj('De quién', '<input type="text" id="cbCliente" class="tj-in" list="tjClientes" autocomplete="off" placeholder="Cliente (si no sabés, dejalo vacío)" value="' + (c ? esc(c.cliente) : '') + '">')
     + campoTj('Fecha', '<input type="date" id="cbFecha" class="tj-in" value="' + (c ? c.fecha : hoyISO()) + '">')
     + '<div class="chips" id="cbForma">' + chipsForma(cb.forma, 'tjCbForma') + '</div>'
-    + '<label class="tj-lb">¿De qué facturas es?</label><div id="cbLista"></div><div id="cbRes" class="tj-res"></div>'
+    + '<label class="tj-lb">¿Qué ventas te está pagando?</label><div id="cbLista"></div><div id="cbRes" class="tj-res"></div>'
     + '<div class="fila"><button data-act="cerrarHoja">Cancelar</button><button class="pri" data-act="tjGuardarCobro">Guardar</button></div>'
     + datalistClientes());
   var m = document.getElementById('cbMonto'), cl = document.getElementById('cbCliente');
@@ -3968,7 +4082,7 @@ function dibujarCobro(){
   var todas = pendientes(cb.id), delCli = [], lista, i, h = '', nota = '';
   for(i=0;i<todas.length;i++) if(cli && mismoCliente(todas[i].cliente, cli)) delCli.push(todas[i]);
   lista = delCli.length ? delCli : todas.slice();
-  if(cli && !delCli.length && todas.length) nota = 'No hay facturas pendientes de ese cliente: te muestro todas.';
+  if(cli && !delCli.length && todas.length) nota = 'No hay ventas pendientes de ese cliente: te muestro todas.';
   for(i=0;i<todas.length;i++) if(cb.sel[todas[i].id] && lista.indexOf(todas[i]) < 0) lista.push(todas[i]);
   if(!cb.manual){
     var cand = [];
@@ -3984,7 +4098,7 @@ function dibujarCobro(){
        + '<small class="' + (v.mal ? 'mal' : '') + '">' + v.t + '</small></span><span class="mt">' + fARS(saldoFac(f, cb.id)) + '</span></button>';
   }
   e.innerHTML = (nota ? '<div class="nota" style="padding:0 2px 8px">' + nota + '</div>' : '')
-              + (h ? '<div class="tj-caja">' + h + '</div>' : '<div class="tj-vacio" style="padding:0 2px 10px">No hay facturas pendientes.</div>');
+              + (h ? '<div class="tj-caja">' + h + '</div>' : '<div class="tj-vacio" style="padding:0 2px 10px">No hay ventas a plazo pendientes.</div>');
   pintarResCobro();
 }
 function elegidas(){
@@ -3999,9 +4113,9 @@ function pintarResCobro(){
   var e = document.getElementById('cbRes'); if(!e || !cb) return;
   var P = Math.round(parseNum(val('cbMonto'))), sel = elegidas(), S = 0, i, h = '', cls = '';
   for(i=0;i<sel.length;i++) S += sel[i].s;
-  if(!(P > 0)) h = 'Poné el monto que entró y te sugiero de qué facturas es.';
-  else if(!sel.length) h = 'Sin facturas elegidas: el pago queda <b>sin identificar</b> y lo podés asignar después.';
-  else if(Math.abs(S - P) < 1){ h = 'Coincide justo con ' + sel.length + (sel.length === 1 ? ' factura.' : ' facturas.'); cls = 'ok'; }
+  if(!(P > 0)) h = 'Poné el monto que entró y te sugiero qué ventas te está pagando.';
+  else if(!sel.length) h = 'Sin ventas elegidas: el pago queda <b>sin identificar</b> y lo podés asignar después.';
+  else if(Math.abs(S - P) < 1){ h = 'Coincide justo con ' + sel.length + (sel.length === 1 ? ' venta.' : ' ventas.'); cls = 'ok'; }
   else if(P > S) h = 'Sobran <b>' + fARS(P - S) + '</b>: esa parte queda sin identificar.';
   else {
     var d = S - P, pct = d / S, chica = pct <= RETENCION_MAX;
@@ -4009,7 +4123,7 @@ function pintarResCobro(){
     h = 'Faltan <b>' + fARS(d) + '</b> (' + (pct*100).toFixed(1).replace('.', ',') + ' %).' + (chica ? ' Es poco: puede ser una retención.' : '')
       + '<div class="seg" style="margin-top:10px"><button data-act="tjCbModo" data-v="retencion" class="' + (cb.modo === 'retencion' ? 'on' : '') + '">Es retención</button>'
       + '<button data-act="tjCbModo" data-v="debe" class="' + (cb.modo === 'debe' ? 'on' : '') + '">Queda debiendo</button></div>'
-      + '<small>' + (cb.modo === 'retencion' ? 'Las facturas quedan cobradas y la diferencia se anota como retención.'
+      + '<small>' + (cb.modo === 'retencion' ? 'Las ventas quedan cobradas y la diferencia se anota como retención.'
                                              : 'Se cobra lo que entró, empezando por la más vieja. El resto queda pendiente.') + '</small>';
   }
   if(cb.sugerida && !cb.manual && sel.length) h = '<span class="tj-sug">Sugerido</span> ' + h;
@@ -4036,23 +4150,108 @@ function verCobro(id){
   var sa = sinAsignar(c), h = '', i;
   for(i=0;i<c.aplic.length;i++){
     var a = c.aplic[i], f = facPorId(a.f);
-    h += '<div class="tj-f"><span class="tx"><b>' + esc(f ? nomFac(f) : 'Factura borrada') + '</b>' + (a.r ? '<small>Retención ' + fARS(a.r) + '</small>' : '') + '</span>'
+    h += '<div class="tj-f"><span class="tx"><b>' + esc(f ? nomFac(f) : 'Venta borrada') + '</b>' + (a.r ? '<small>Retención ' + fARS(a.r) + '</small>' : '') + '</span>'
        + '<span class="mt">' + fARS(a.m) + '</span></div>';
   }
   abrirHoja('<h3>Cobro de ' + esc(c.cliente || 'origen desconocido') + '</h3><div class="tj-det">'
     + renglon('Monto', fARS(c.monto)) + renglon('Fecha', fDia(c.fecha)) + renglon('Cómo', nombreForma(c.forma))
     + (sa ? renglon('Sin identificar', '<span class="' + (oculto ? '' : 'neg') + '">' + fARS(sa) + '</span>') : '')
-    + '</div>' + (h ? '<label class="tj-lb">Paga estas facturas</label><div class="tj-caja">' + h + '</div>' : '')
+    + '</div>' + (h ? '<label class="tj-lb">Paga estas ventas</label><div class="tj-caja">' + h + '</div>' : '')
     + '<div class="fila"><button class="mal" data-act="tjBorrarCobro" data-id="' + esc(c.id) + '">Borrar</button>'
-    + '<button class="pri" data-act="tjEditarCobro" data-id="' + esc(c.id) + '">' + (sa ? 'Elegir facturas' : 'Cambiar facturas') + '</button></div>');
+    + '<button class="pri" data-act="tjEditarCobro" data-id="' + esc(c.id) + '">' + (sa ? 'Elegir ventas' : 'Cambiar ventas') + '</button></div>');
 }
 function borrarCobro(id){
-  confirmar('Borrar el cobro', 'Las facturas que pagaba vuelven a quedar pendientes.', 'Borrar', function(){
+  confirmar('Borrar el cobro', 'Las ventas que pagaba vuelven a quedar pendientes.', 'Borrar', function(){
     antesDeCambiar();
     T.cobros = T.cobros.filter(function(x){ return x.id !== id; });
     guardarTrab(true); renderTrabajo();
     toast('Cobro borrado', 'Deshacer', 'tjDeshacer');
   });
+}
+/* pasar a lo personal: suma a un renglón de Ingresos, sin tocar ninguna fórmula del mes */
+function renglonTrabajo(d, m, crear){
+  var ls = d.meses[m].ingresos, i;
+  for(i=0;i<ls.length;i++) if(String(ls[i].nombre || '').trim().toLowerCase() === RENGLON_TRABAJO.toLowerCase()) return ls[i];
+  if(!crear) return null;
+  var it = {nombre:RENGLON_TRABAJO, monto:0, tope:0}; ls.push(it); return it;
+}
+function aplicarPase(p, signo){
+  var abierto = p.anio === D.anio, d = abierto ? D : leerAnio(p.anio);
+  if(!d) return false;
+  var it = renglonTrabajo(d, p.mes, signo > 0);
+  if(!it) return false;
+  it.monto = Math.max(0, Math.round(num(it.monto) + signo * p.monto));
+  if(abierto){ sucio = true; guardar(); return true; }
+  d.actualizado = new Date().toISOString();                 // otro año: se escribe ese año guardado, el abierto no se toca
+  try{ localStorage.setItem(PREF + d.anio, JSON.stringify(d)); }catch(e){ return false; }
+  return true;
+}
+function destinoPase(){ var fe = val('psFecha'); if(!esISO(fe)) fe = hoyISO(); return {fecha:fe, anio:+fe.slice(0,4), mes:+fe.slice(5,7) - 1}; }
+function anioExiste(a){ return a === D.anio || !!leerAnio(a); }
+function abrirPase(){
+  var r = resumenTrab();
+  if(r.disponible <= 0){
+    alerta('Todavía no hay plata para pasar', 'Se pasa a lo personal lo que ya cobraste.'
+      + (r.aAcreditar ? ' Lo que tiene fecha más adelante vas a poder pasarlo cuando llegue ese día.' : ' Cuando cargues una venta cobrada o un cobro, aparece acá.'));
+    return;
+  }
+  abrirHoja('<h3>Pasar a lo personal</h3>'
+    + '<input type="text" id="psMonto" class="grande tj-in" inputmode="decimal" placeholder="0" autocomplete="off">'
+    + '<div class="chips"><button data-act="tjPaseTodo">Todo: ' + fARS(r.disponible) + '</button></div>'
+    + campoTj('Fecha', '<input type="date" id="psFecha" class="tj-in" value="' + hoyISO() + '">')
+    + '<div class="nota" id="psNota" style="padding:0 0 14px"></div>'
+    + '<div class="fila"><button data-act="cerrarHoja">Cancelar</button><button class="pri" data-act="tjGuardarPase">Pasar</button></div>');
+  var fe = document.getElementById('psFecha'), mo = document.getElementById('psMonto');
+  fe.addEventListener('input', notaPase); fe.addEventListener('change', notaPase); mo.addEventListener('input', notaPase);
+  notaPase(); mo.focus();
+}
+function notaPase(){
+  var e = document.getElementById('psNota'); if(!e) return;
+  var d = destinoPase(), r = resumenTrab(), m = Math.round(parseNum(val('psMonto')));
+  e.className = 'nota';
+  if(!anioExiste(d.anio)){ e.className = 'nota mal'; e.innerHTML = 'El ' + d.anio + ' no está creado en la app. Elegí una fecha de un año que tengas.'; return; }
+  if(m > r.disponible + 0.5){ e.className = 'nota mal'; e.innerHTML = 'Es más de lo que tenés disponible (' + fARS(r.disponible) + ').'; return; }
+  e.innerHTML = 'Se suma a Ingresos de <b>' + MESES[d.mes] + ' ' + d.anio + '</b>, en el renglón <b>' + RENGLON_TRABAJO + '</b>. Disponible: ' + fARS(r.disponible) + '.';
+}
+function guardarPase(){
+  var m = Math.round(parseNum(val('psMonto'))), d = destinoPase(), r = resumenTrab();
+  if(!(m > 0)){ errorEn('psNota', 'Falta cuánto querés pasar.'); document.getElementById('psMonto').focus(); return; }
+  if(m > r.disponible + 0.5){ errorEn('psNota', 'Es más de lo que tenés disponible (' + fARS(r.disponible) + ').'); return; }
+  if(!anioExiste(d.anio)){ errorEn('psNota', 'El ' + d.anio + ' no está creado en la app. Elegí una fecha de un año que tengas.'); return; }
+  var p = {id:tjId(), fecha:d.fecha, monto:m, anio:d.anio, mes:d.mes, creada:new Date().toISOString()};
+  if(!aplicarPase(p, 1)){ errorEn('psNota', 'No pude sumarlo al mes. Probá de nuevo.'); return; }
+  T.pases.push(p); tjAntes = null;
+  guardarTrab(true); cerrarHoja(); renderTrabajo();
+  toast('Pasé ' + fARS(m) + ' a Ingresos de ' + MESES[d.mes], 'Deshacer', 'tjDeshacerPase', p.id);
+}
+function quitarPase(id, avisar){
+  var p = null, i;
+  for(i=0;i<T.pases.length;i++) if(T.pases[i].id === id) p = T.pases[i];
+  if(!p) return;
+  var ok = aplicarPase(p, -1);
+  T.pases = T.pases.filter(function(x){ return x.id !== id; });
+  tjAntes = null; paseQuitado = p;
+  guardarTrab(true); renderTrabajo();
+  var msg = ok ? 'Saqué ' + fARS(p.monto) + ' de Ingresos de ' + MESES[p.mes]
+               : 'Pase borrado. No encontré el renglón “' + RENGLON_TRABAJO + '” en ' + MESES[p.mes] + ': revisalo en Mes.';
+  if(avisar) toast(msg, ok ? 'Deshacer' : '', 'tjReponerPase');
+  else toast(ok ? 'Deshecho' : msg);
+}
+function reponerPase(){
+  var p = paseQuitado; if(!p) return;
+  paseQuitado = null;
+  if(!aplicarPase(p, 1)){ toast('No pude volver a sumarlo'); return; }
+  T.pases.push(p); guardarTrab(true); renderTrabajo();
+  toast('Listo, quedó como antes');
+}
+function verPase(id){
+  var p = null, i; for(i=0;i<T.pases.length;i++) if(T.pases[i].id === id) p = T.pases[i];
+  if(!p) return;
+  abrirHoja('<h3>Pasado a lo personal</h3><div class="tj-det">'
+    + renglon('Monto', fARS(p.monto)) + renglon('Fecha', fDia(p.fecha))
+    + renglon('Fue a', 'Ingresos de ' + MESES[p.mes] + ' ' + p.anio + ' · ' + RENGLON_TRABAJO)
+    + '</div><div class="fila"><button class="mal" data-act="tjBorrarPase" data-id="' + esc(p.id) + '">Borrar</button>'
+    + '<button data-act="cerrarHoja">Listo</button></div>');
 }
 function accionTj(a, b){
   var id = b.getAttribute('data-id'), v = b.getAttribute('data-v');
@@ -4070,6 +4269,7 @@ function accionTj(a, b){
     marcarChips('fxPlazo', b); notaFx(); return;
   }
   if(a === 'tjFxForma'){ fx.forma = v; marcarChips('fxForma', b); return; }
+  if(a === 'tjVtPago'){ fx.pago = v; marcarChips('fxPago', b); modoPagoFx(); return; }
   if(a === 'tjNuevoCobro'){ abrirCobro(null); return; }
   if(a === 'tjVerCobro'){ verCobro(id); return; }
   if(a === 'tjEditarCobro'){ abrirCobro(id); return; }
@@ -4079,6 +4279,18 @@ function accionTj(a, b){
   if(a === 'tjGuardarCobro'){ guardarCobro(); return; }
   if(a === 'tjBorrarCobro'){ borrarCobro(id); return; }
   if(a === 'tjDeshacer'){ deshacerTj(); return; }
+  if(a === 'tjPasar'){ abrirPase(); return; }
+  if(a === 'tjPaseTodo'){ var r0 = resumenTrab(), mi = document.getElementById('psMonto'); if(mi){ mi.value = montoInput(Math.max(0, r0.disponible)); notaPase(); } return; }
+  if(a === 'tjGuardarPase'){ guardarPase(); return; }
+  if(a === 'tjDeshacerPase'){ quitarPase(id, false); return; }
+  if(a === 'tjVerPase'){ verPase(id); return; }
+  if(a === 'tjBorrarPase'){
+    var pp = null; for(var q=0;q<T.pases.length;q++) if(T.pases[q].id === id) pp = T.pases[q];
+    if(!pp) return;
+    confirmar('Borrar el pase', 'Se descuentan ' + fARS(pp.monto) + ' del renglón “' + RENGLON_TRABAJO + '” de ' + MESES[pp.mes] + ' ' + pp.anio + '.', 'Borrar', function(){ quitarPase(id, true); });
+    return;
+  }
+  if(a === 'tjReponerPase'){ reponerPase(); return; }
 }
 
 /* ═══ 14 · arranque ═══════════════════════════════════ */
