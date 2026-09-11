@@ -322,6 +322,16 @@ button.tj-f:active{background:var(--fill)}
 .tj-det{margin-bottom:10px}
 .tj-dos{display:flex;gap:8px}
 .tj-modo{margin-bottom:6px}
+.ritmo{margin-top:8px;font-size:13px;line-height:1.35;color:var(--txt2)}
+.ritmo.mal{color:var(--neg)}
+.tj-hoy{font-size:13px;color:var(--txt2);text-align:center;margin:10px 0 0}
+.tj-cz{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:5px;align-items:center}
+.tj-cz .czn{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tj-cz .czd{font-size:13px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tj-cz .czd.mal{color:var(--neg)}
+.tj-rec{justify-self:end;font-size:14px;font-weight:600;padding:6px 14px;min-height:32px;border-radius:10px;background:var(--acc-soft);color:var(--acc)}
+.tj-rec:active{opacity:.7}
+.tj-msg{display:block;width:100%;min-height:160px;padding:12px 14px;border-radius:12px;border:1px solid var(--sep);background:var(--bg);color:var(--txt);font:inherit;font-size:15px;line-height:1.45;margin-bottom:6px;resize:vertical;outline:none}
 #v-trabajo .tri b.largo{font-size:13px}
 #v-trabajo .final .big.largo{font-size:28px}
 #v-mes .item.deltrab input{color:var(--txt2)}
@@ -1577,7 +1587,7 @@ nav button.on .np{background:var(--acc-soft)}
 var M1 = '/*DATOS_' + 'INICIO*/';
 var M2 = '/*DATOS_' + 'FIN*/';
 
-var APPVER   = 'L6.5 · base v1.28';    // versión visible en Ajustes (LAB)
+var APPVER   = 'L7 · base v1.28';    // versión visible en Ajustes (LAB)
 var PREF     = 'kibolab.datos.';    // LAB: prefijo propio para no tocar los datos de la app real (kibo.datos.AAAA)
 var LSANIO   = 'kibolab.anio';
 var LSCOPIA  = 'kibolab.ultimaCopia';
@@ -2033,7 +2043,7 @@ function renderMes(){
      +   '</div>'
      +   '<div class="final"><small>Disponible final · '+MESES[mes]+'</small>'
      +     '<div class="final-fila"><div class="big '+(c.disponibleFinal<0?'mal':'ok')+'" id="bigFinal">'+fARS(c.disponibleFinal)+'</div>'
-     +     botonOjo() + '</div></div>'
+     +     botonOjo() + '</div>' + lineaRitmo(c) + '</div>'
      +   '<div class="barras">'
      +     barra('Gastos sobre ingresos', c.pctGastos, false, 'bGa')
      +     barra('Ahorro sobre ingresos', c.pctAhorro, true, 'bAh')
@@ -2496,7 +2506,8 @@ function manual(){
     + '<ul><li>Tocá un monto para editarlo. Podés escribir 12000 o 12.000, da lo mismo.</li>'
     + '<li>Tocá el nombre para renombrar la categoría. La × la borra solo de ese mes.</li>'
     + '<li>El botón + agrega una categoría y te pregunta si querés tenerla también en los meses que siguen.</li>'
-    + '<li>Cuando un mes nuevo tiene los fijos, los ingresos o las deudas en cero, aparece <b>Copiar los montos</b> del mes anterior. Un toque y listo. Las variables no se copian porque cambian cada mes.</li></ul>');
+    + '<li>Cuando un mes nuevo tiene los fijos, los ingresos o las deudas en cero, aparece <b>Copiar los montos</b> del mes anterior. Un toque y listo. Las variables no se copian porque cambian cada mes.</li></ul>'
+    + '<p>En el mes de hoy, debajo del disponible, la app te dice <b>cuánto te alcanza por día</b> hasta fin de mes. Si venís gastando más rápido de lo que te da el mes, te avisa en rojo cómo terminarías a ese ritmo, para que lo corrijas a tiempo.</p>');
   h += bloque('rapido', 'Gasto rápido',
       '<p>El botón verde de abajo es para cargar un gasto en el momento, desde el celular: tocás, escribís el monto, tocás la categoría, y ya se sumó. Tres toques.</p>'
     + '<p>Cada gasto queda en la sección <b>Gastos rápidos</b> del mes, con fecha, y se puede deshacer con la ×. Apenas lo cargás también aparece un aviso con <b>Deshacer</b> durante unos segundos, por si tocaste mal.</p>');
@@ -2589,8 +2600,9 @@ function manual(){
     + '<p>Los ceros se muestran como "—". Los negativos van entre paréntesis y en rojo.</p>');
   h += bloque('trabajo', 'Trabajo por tu cuenta',
       '<p>Si vendés o facturás por tu cuenta, aunque sea de vez en cuando, prendé <b>Vendo o facturo por mi cuenta</b> en Ajustes y aparece la pestaña <b>Trabajo</b>. Si la apagás, no se borra nada. Deslizando el dedo también llegás a ella: queda entre USD y Ajustes.</p>'
-    + '<p>Arriba elegís cómo trabajás. En <b>Simple</b> anotás ventas sueltas, como algo que vendiste por Marketplace o a un conocido: qué, cuánto y cómo te pagaron, y quedan cobradas. En <b>Profesional</b> cargás facturas con cliente, número y plazo, y quedan en <b>Por cobrar</b> hasta que entra el pago; si el plazo es <b>Contado</b>, quedan cobradas en el acto. Cambiar de modo no borra nada.</p>'
-    + '<p>Cuando entra plata de una factura, tocás <b>Entró un pago</b>: la app busca qué facturas pendientes de ese cliente suman ese monto. Si falta hasta un 10 %, probablemente es una retención; si falta más, la factura queda con saldo. Para los abonos que se repiten, abrí la factura y tocá <b>Repetir el mes que viene</b>.</p>'
+    + '<p>Arriba elegís cómo trabajás. En <b>Simple</b> anotás ventas sueltas, como algo que vendiste por Marketplace o a un conocido: qué, cuánto y cómo te pagaron, y quedan cobradas. Arriba ves lo que vendiste hoy, separado en efectivo y transferencias, para cerrar la caja. En <b>Profesional</b> cargás facturas con cliente, número y plazo, y quedan en <b>Por cobrar</b> hasta que entra el pago; si el plazo es <b>Contado</b>, quedan cobradas en el acto. Cambiar de modo no borra nada.</p>'
+    + '<p>Cuando entra plata de una factura, tocás <b>Entró un pago</b>: la app busca qué facturas pendientes de ese cliente suman ese monto. Si falta hasta un 10 %, probablemente es una retención; si falta más, la factura queda con saldo. El número de cada factura nueva ya viene sugerido: el siguiente al de la última. Si una factura se repite todos los meses, marcala como <b>abono</b> y se genera sola cada mes; para repetirla una sola vez, tocá <b>Repetir el mes que viene</b>.</p>'
+    + '<p><b>Cobranza de la semana</b> junta por cliente lo vencido y lo que vence en los próximos 7 días. Con <b>Recordar</b> armás el mensaje con sus facturas y lo mandás por WhatsApp o mail desde el menú de compartir del teléfono; no pasa por ningún servidor.</p>'
     + '<p>Los <b>gastos del trabajo</b> (mercadería, comisiones, impuestos, herramientas) se restan del disponible. Si pagaste en dólares, ponés cuántos y a qué cotización, y la app lo pasa a pesos. Un gasto con fecha más adelante queda <b>programado</b> y se descuenta cuando llega el día.</p>'
     + '<p>En Profesional también ves el <b>tope del monotributo</b> (lo cargás vos, porque cambia con cada recategorización) y cuánto tarda de verdad cada <b>cliente</b> en pagarte. Si algo está vencido, la pestaña Trabajo muestra un puntito rojo.</p>'
     + '<p><b>Pasar a lo personal</b> manda plata de lo que te queda disponible a Ingresos del mes, al renglón <b>Del trabajo</b>, y desde ahí cuenta como cualquier ingreso: suma al disponible final y al ahorro. Si borrás un pase, se descuenta de ese renglón. En Mes, ese renglón queda bloqueado mientras tenga pases: se cambia desde Trabajo, así los dos lados siempre cierran.</p>'
@@ -2730,7 +2742,8 @@ function refrescar(){
   var sa = document.getElementById('sub-ahorro'); if(sa) sa.textContent = fARS(c.ahorroMesARS);
   var big = document.getElementById('bigFinal');
   if(big){ big.textContent = fARS(c.disponibleFinal); big.className = 'big ' + (c.disponibleFinal<0?'mal':'ok'); }
-  var tri = document.querySelectorAll('.tri b');
+  refrescarRitmo(c);
+  var tri = document.querySelectorAll('#v-mes .tri b');
   if(tri.length === 3){ tri[0].textContent = fARS(c.totalIngresos); tri[1].textContent = fARS(c.totalGastos); tri[2].textContent = fARS(c.ahorroMesARS); }
   puntual('bGa', c.pctGastos); puntual('bAh', c.pctAhorro);
   var ns = document.getElementById('notaSug');
@@ -3685,6 +3698,7 @@ ICOSEC.tjFact = '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M
 ICOSEC.tjGast = '<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 ICOSEC.tjMono = '<svg viewBox="0 0 24 24"><path d="M4 20h16M6 16V9M10 16V5M14 16v-4M18 16V8"/></svg>';
 ICOSEC.tjCli  = '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg>';
+ICOSEC.tjCobr = '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8"/></svg>';
 ICOSEC.tjPases = '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
 function tjId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -3742,6 +3756,30 @@ function descTrabajo(t){
   if(!p.length) return 'sin movimientos cargados';
   return p.length === 1 ? p[0] : p.slice(0, -1).join(', ') + ' y ' + p[p.length - 1];
 }
+function dinero(n){ n = Math.round(num(n)); var t = '$' + grupos(String(Math.abs(n))); return n < 0 ? '-' + t : t; }   // para mensajes: sin puntos del ojito
+function siguienteNumero(){
+  // toma la última factura con número y le suma uno, respetando prefijo y ceros (0012 → 0013, 00003-00000045 → 00003-00000046)
+  var ult = null, i, f, m;
+  for(i=0;i<T.facturas.length;i++){ f = T.facturas[i]; if(f.tipo === 'factura' && /\d+$/.test(f.numero) && (!ult || f.creada > ult.creada)) ult = f; }
+  if(!ult) return '';
+  var base = ult.numero.match(/^(.*?)(\d+)$/), pre = base[1], ancho = base[2].length, max = +base[2];
+  for(i=0;i<T.facturas.length;i++){ m = String(T.facturas[i].numero).match(/^(.*?)(\d+)$/); if(m && m[1] === pre && +m[2] > max) max = +m[2]; }
+  var n = String(max + 1); while(n.length < ancho) n = '0' + n;
+  return pre + n;
+}
+function ritmoMes(c){
+  // solo en el mes de hoy: cuánto te alcanza por día y, si venís gastando rápido, cómo terminás
+  var h = hoyISO(), anio = +h.slice(0,4), m = +h.slice(5,7) - 1, dia = +h.slice(8,10);
+  if(D.anio !== anio || mes !== m || !(c.totalIngresos > 0)) return null;
+  var dim = new Date(anio, m + 1, 0).getDate(), resto = dim - dia, disp = c.disponibleFinal;
+  if(disp <= 0) return {cls:'mal', txt: disp < 0 ? 'Ya gastaste ' + fARS(-disp) + ' más de lo que te da ' + MESES[m].toLowerCase() + '.' : 'Ya usaste todo lo que te da ' + MESES[m].toLowerCase() + '.'};
+  var porDia = disp / (resto + 1), ritmo = c.subtotalVariables / dia, fin = disp - ritmo * resto;
+  if(dia >= 3 && ritmo > 0 && fin < 0)
+    return {cls:'mal', txt:'A este ritmo (' + fARS(ritmo) + ' por día) terminás el mes en ' + fARS(fin) + '. Para llegar: unos ' + fARS(porDia) + ' por día.'};
+  return {cls:'', txt:'Te alcanza para unos ' + fARS(porDia) + ' por día hasta fin de mes (' + (resto + 1) + (resto ? ' días' : ' día') + ').'};
+}
+function lineaRitmo(c){ var q = ritmoMes(c); return '<div class="ritmo' + (q && q.cls ? ' ' + q.cls : '') + '" id="ritmoMes"' + (q ? '' : ' style="display:none"') + '>' + (q ? q.txt : '') + '</div>'; }
+function refrescarRitmo(c){ var e = document.getElementById('ritmoMes'); if(!e) return; var q = ritmoMes(c); e.className = 'ritmo' + (q && q.cls ? ' ' + q.cls : ''); e.textContent = q ? q.txt : ''; e.style.display = q ? '' : 'none'; }
 function catValida(k){ for(var i=0;i<CATS.length;i++) if(CATS[i][0] === k) return k; return 'otros'; }
 function nombreCat(k){ for(var i=0;i<CATS.length;i++) if(CATS[i][0] === k) return CATS[i][1]; return 'Otros'; }
 function fDiaLargo(iso){ if(!esISO(iso)) return ''; var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
@@ -3766,6 +3804,7 @@ function normTrab(t){
     o.facturas.push({id:String(f.id || tjId()), cliente:String(f.cliente || '').trim(), numero:String(f.numero || '').trim(),
       concepto:String(f.concepto || '').trim(), monto:mo, cantidad:ca, precio: num(f.precio) > 0 ? num(f.precio) : mo / ca,
       contado: f.contado === true, tipo: f.tipo === 'simple' || f.tipo === 'factura' ? f.tipo : (f.contado === true ? 'simple' : 'factura'),
+      abono: f.abono === true, abonoHasta: /^\d{4}-\d{2}$/.test(f.abonoHasta) ? f.abonoHasta : '', abonoDe: String(f.abonoDe || ''),
       fecha: esISO(f.fecha) ? f.fecha : hoyISO(),
       plazo: f.contado === true ? 0 : Math.max(0, Math.round(num(f.plazo))), forma:formaValida(f.forma), creada:String(f.creada || '')});
   }
@@ -3794,7 +3833,7 @@ function normTrab(t){
   }
   o.tope = Math.max(0, Math.round(num(t.tope)));
   if(t.ui && t.ui.col && typeof t.ui.col === 'object') for(var k in t.ui.col) if(t.ui.col.hasOwnProperty(k)) o.ui.col[k] = !!t.ui.col[k];
-  var aPlazo = false; for(i=0;i<o.facturas.length;i++) if(!o.facturas[i].contado) aPlazo = true;
+  var aPlazo = false; for(i=0;i<o.facturas.length;i++){ if(!o.facturas[i].contado) aPlazo = true; if(o.facturas[i].abono && !o.facturas[i].abonoHasta) o.facturas[i].abonoHasta = o.facturas[i].fecha.slice(0,7); }
   o.modo = t.modo === 'simple' || t.modo === 'pro' ? t.modo : (aPlazo ? 'pro' : 'simple');   // si ya tenía facturas a plazo, arranca en Profesional
   return o;
 }
@@ -3873,12 +3912,13 @@ function resumenTrab(){
   }
   r.pasado = 0; r.pasadoMes = 0;
   for(i=0;i<T.pases.length;i++){ r.pasado += T.pases[i].monto; if(T.pases[i].fecha.slice(0,7) === mesAct) r.pasadoMes += T.pases[i].monto; }
-  r.gastado = 0; r.gastadoMes = 0; r.gastoFuturo = 0; r.vendidoSimpleMes = 0; r.facturadoMes = 0; r.facturado12 = 0; r.vencenSemana = 0; r.vencenSemanaMonto = 0;
+  r.gastado = 0; r.gastadoMes = 0; r.gastoFuturo = 0; r.vendidoSimpleMes = 0; r.hoyForma = {}; r.facturadoMes = 0; r.facturado12 = 0; r.vencenSemana = 0; r.vencenSemanaMonto = 0;
   for(i=0;i<T.gastos.length;i++){
     var g = T.gastos[i];
     if(g.fecha <= hoy){ r.gastado += g.monto; if(g.fecha.slice(0,7) === mesAct) r.gastadoMes += g.monto; }
     else r.gastoFuturo += g.monto;   // programado: se descuenta cuando llega el día
   }
+  for(i=0;i<T.facturas.length;i++){ var fh = T.facturas[i]; if(fh.fecha === hoy && fh.contado) r.hoyForma[fh.forma] = (r.hoyForma[fh.forma] || 0) + fh.monto; }
   var hace12 = sumarDias(hoy, -365);
   for(i=0;i<T.facturas.length;i++){
     var fa = T.facturas[i];
@@ -3986,7 +4026,7 @@ function aplicarModo(){
 function modoTrabajo(si){
   if(si){
     if(T.activo) return;
-    T.activo = true; guardarTrab(true); aplicarModo(); renderAjustes();
+    T.activo = true; guardarTrab(true); generarAbonos(); aplicarModo(); renderAjustes();
     toast('Apareció la pestaña Trabajo');
     return;
   }
@@ -4011,7 +4051,7 @@ function filaFac(f){
   var s = saldoFac(f), v = txtVence(f), parcial = s > 0 && s < Math.round(f.monto);
   return '<button class="tj-f" data-act="tjVerFac" data-id="' + esc(f.id) + '"><span class="tx">'
        + '<b>' + esc(f.cliente || 'Sin cliente') + (f.numero ? ' · ' + esc(f.numero) : '') + '</b>'
-       + '<small class="' + (v.mal ? 'mal' : '') + '">' + v.t + ' · ' + nombreForma(f.forma) + '</small></span>'
+       + '<small class="' + (v.mal ? 'mal' : '') + '">' + v.t + ' · ' + nombreForma(f.forma) + (f.abono || f.abonoDe ? ' · Abono' : '') + '</small></span>'
        + '<span class="mt">' + fARS(s) + (parcial ? '<small>de ' + fARS(f.monto) + '</small>' : '') + '</span></button>';
 }
 function filaCobro(c){
@@ -4027,11 +4067,16 @@ function filaVenta(f){
   if(f.tipo === 'simple'){ b = nomFac(f); det = (acr ? 'Se acredita el ' + fDia(acr) : fDia(f.fecha)) + ' · ' + nombreForma(f.forma); }
   else {
     b = (f.cliente || 'Sin cliente') + (f.numero ? ' · ' + f.numero : '');
-    det = fDia(f.fecha) + ' · ' + (acr ? 'Se acredita el ' + fDia(acr) : f.contado ? 'Contado · ' + nombreForma(f.forma) : (s ? v.t : 'Cobrada'));
+    det = fDia(f.fecha) + ' · ' + (acr ? 'Se acredita el ' + fDia(acr) : f.contado ? 'Contado · ' + nombreForma(f.forma) : (s ? v.t : 'Cobrada')) + (f.abono || f.abonoDe ? ' · Abono' : '');
   }
   return '<button class="tj-f" data-act="tjVerFac" data-id="' + esc(f.id) + '"><span class="tx">'
        + '<b>' + esc(b) + '</b><small class="' + (s && v.mal ? 'mal' : '') + '">' + esc(det) + '</small></span>'
        + '<span class="mt' + (s || f.tipo === 'simple' ? '' : ' mudo') + '">' + fARS(f.monto) + '</span></button>';
+}
+function lineaHoy(r){
+  var p = [r.hoyVentas + (r.hoyVentas === 1 ? ' venta' : ' ventas')], orden = ['efectivo','transferencia','echeq','otra'], i;
+  for(i=0;i<orden.length;i++) if(r.hoyForma[orden[i]]) p.push((orden[i] === 'transferencia' ? 'transferencias' : nombreForma(orden[i]).toLowerCase()) + ' ' + fARS(r.hoyForma[orden[i]]));
+  return 'Hoy: ' + p.join(' · ');
 }
 function explicaDisp(r){
   var menos = [];
@@ -4069,6 +4114,78 @@ function cuerpoClientes(){
   return h ? '<div class="nota" style="padding:10px 16px 2px">Días que acordaste y días que tarda en pagarte, en promedio.</div>' + h
            : '<div class="tj-vacio">Cuando cobres facturas a plazo, acá vas a ver cuánto tarda de verdad cada cliente.</div>';
 }
+function cobranza(){
+  var hoy = hoyISO(), lim = sumarDias(hoy, 7), g = {}, orden = [], i, k;
+  for(i=0;i<T.facturas.length;i++){
+    var f = T.facturas[i], s = saldoFac(f); if(!s || f.contado) continue;
+    var v = venceFac(f); if(v > lim) continue;
+    k = clave(f.cliente || 'Sin cliente');
+    if(!g[k]){ g[k] = {k:k, nombre:f.cliente || 'Sin cliente', n:0, venc:0, total:0}; orden.push(k); }
+    g[k].n++; g[k].total += s; if(v < hoy) g[k].venc++;
+  }
+  var out = []; for(i=0;i<orden.length;i++) out.push(g[orden[i]]);
+  out.sort(function(a, b){ return b.venc - a.venc || b.total - a.total; });
+  var eq = [];
+  for(i=0;i<T.cobros.length;i++){ var c = T.cobros[i]; if(c.fecha > hoy && c.fecha <= lim) eq.push(c); }
+  eq.sort(function(a, b){ return a.fecha < b.fecha ? -1 : 1; });
+  return {clientes:out, echeqs:eq};
+}
+function cuerpoCobranza(cz){
+  var h = '', i;
+  for(i=0;i<cz.clientes.length;i++){
+    var c = cz.clientes[i];
+    // dos líneas: arriba nombre y monto, abajo lo vencido y el botón; así nada compite por el ancho
+    h += '<div class="tj-f tj-cz"><b class="czn">' + esc(c.nombre) + '</b><span class="mt">' + fARS(c.total) + '</span>'
+       + '<small class="czd' + (c.venc ? ' mal' : '') + '">' + c.n + (c.n === 1 ? ' factura' : ' facturas')
+       + (c.venc ? ' · ' + c.venc + (c.venc === 1 ? ' vencida' : ' vencidas') : ' · vence esta semana') + '</small>'
+       + '<button class="tj-rec" data-act="tjRecordar" data-k="' + esc(c.k) + '">Recordar</button></div>';
+  }
+  if(cz.echeqs.length){
+    var t = [];
+    for(i=0;i<cz.echeqs.length;i++) t.push(esc(cz.echeqs[i].cliente || 'Sin identificar') + ' ' + fARS(cz.echeqs[i].monto) + ' el ' + fDia(cz.echeqs[i].fecha));
+    h += '<div class="nota" style="padding:10px 16px 12px">Se acreditan esta semana: ' + t.join(' · ') + '.</div>';
+  }
+  return h;
+}
+function mensajeCobro(k){
+  var l = [], i, tot = 0, nom = '';
+  for(i=0;i<T.facturas.length;i++){ var f = T.facturas[i]; if(f.contado || !saldoFac(f) || clave(f.cliente || 'Sin cliente') !== k) continue; l.push(f); nom = nom || f.cliente; }
+  l.sort(porVencimiento);
+  var hoy = hoyISO(), r = ['Hola! Te escribo por ' + (l.length === 1 ? 'la factura pendiente' : 'las facturas pendientes') + ':'];
+  for(i=0;i<l.length;i++){
+    var s = saldoFac(l[i]), v = venceFac(l[i]); tot += s;
+    r.push('• ' + (l[i].numero ? 'Factura ' + l[i].numero : 'Factura del ' + fDia(l[i].fecha)) + (l[i].concepto ? ' (' + l[i].concepto + ')' : '')
+         + ': ' + dinero(s) + (s < Math.round(l[i].monto) ? ' de ' + dinero(l[i].monto) : '') + ' — ' + (v < hoy ? 'venció el ' : 'vence el ') + fDia(v));
+  }
+  if(l.length > 1) r.push('Total: ' + dinero(tot) + '.');
+  r.push('¡Gracias!');
+  return {nombre:nom, texto:r.join('\n')};
+}
+function abrirRecordar(k){
+  var m = mensajeCobro(k);
+  abrirHoja('<h3>Recordar a ' + esc(m.nombre) + '</h3>'
+    + '<textarea id="rcTexto" class="tj-msg" rows="8">' + esc(m.texto) + '</textarea>'
+    + '<div class="nota" style="padding:4px 2px 14px">Podés cambiar el texto. Al enviar se abre el menú de compartir de tu teléfono para elegir WhatsApp, mail o lo que uses.</div>'
+    + '<div class="fila"><button data-act="tjCopiarMsg">Copiar</button><button class="pri" data-act="tjEnviarMsg">Enviar</button></div>');
+}
+function copiarTexto(t){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){ toast('Copié el mensaje: pegalo en WhatsApp o en un mail'); }, function(){ copiarViejo(t); }); return; }
+  }catch(e){}
+  copiarViejo(t);
+}
+function copiarViejo(t){
+  var a = document.getElementById('rcTexto'); if(!a) return;
+  a.focus(); a.select();
+  try{ document.execCommand('copy'); toast('Copié el mensaje: pegalo en WhatsApp o en un mail'); }catch(e){ toast('Seleccioná el texto y copialo'); }
+}
+function enviarTexto(t){
+  if(navigator.share){
+    navigator.share({text:t}).then(function(){ cerrarHoja(); }, function(e){ if(!(e && e.name === 'AbortError')) copiarTexto(t); });
+    return;
+  }
+  copiarTexto(t);   // si el navegador no tiene menú de compartir, queda copiado para pegarlo donde quieras
+}
 function renderTrabajo(){
   var v = document.getElementById('v-trabajo'); if(!v) return;
   var r = resumenTrab(), pro = T.modo === 'pro', h = '', i;
@@ -4080,10 +4197,11 @@ function renderTrabajo(){
      + (pro ? '<div><small>Por cobrar</small><b class="' + largo(fARS(r.porCobrar)) + '">' + fARS(r.porCobrar) + '</b></div>'
             + '<div><small>Vencido</small><b class="' + (r.vencido && !oculto ? 'neg' : '') + largo(fARS(r.vencido)) + '">' + fARS(r.vencido) + '</b></div>'
             + '<div><small>Entra en 30 días</small><b class="' + largo(fARS(r.prox30)) + '">' + fARS(r.prox30) + '</b></div>'
-            : '<div><small>Vendido en ' + mc + '</small><b class="' + largo(fARS(r.vendidoSimpleMes)) + '">' + fARS(r.vendidoSimpleMes) + '</b></div>'
-            + '<div><small>Gastado en ' + mc + '</small><b class="' + largo(fARS(r.gastadoMes)) + '">' + fARS(r.gastadoMes) + '</b></div>'
+            : '<div><small>Hoy vendiste</small><b class="' + largo(fARS(r.hoyVendido)) + '">' + fARS(r.hoyVendido) + '</b></div>'
+            + '<div><small>Vendido en ' + mc + '</small><b class="' + largo(fARS(r.vendidoSimpleMes)) + '">' + fARS(r.vendidoSimpleMes) + '</b></div>'
             + '<div><small>Te quedó</small><b class="' + (r.vendidoSimpleMes - r.gastadoMes < 0 && !oculto ? 'neg' : '') + largo(fARS(r.vendidoSimpleMes - r.gastadoMes)) + '">' + fARS(r.vendidoSimpleMes - r.gastadoMes) + '</b></div>')
      + '</div>'
+     + (!pro && r.hoyVentas ? '<div class="tj-hoy">' + lineaHoy(r) + '</div>' : '')
      + '<div class="final"><small>Disponible del trabajo</small><div class="final-fila"><div class="big ' + (neg ? 'mal' : 'ok') + largo(fARS(r.disponible)) + '" id="tjDisp">' + fARS(r.disponible) + '</div></div>'
      +   '<small>' + explicaDisp(r) + '</small>'
      +   (neg ? '<small class="neg">' + (r.gastado > r.cobrado
@@ -4095,6 +4213,12 @@ function renderTrabajo(){
   h += '<div class="tj-acc"><button class="pri" data-act="tjNuevaFac">' + (pro ? 'Nueva factura' : 'Nueva venta') + '</button>'
      + (pro ? '<button data-act="tjNuevoCobro">Entró un pago</button>' : '') + '</div>'
      + '<button class="tj-linea" data-act="tjNuevoGasto">+ Cargar un gasto del trabajo</button>';
+  if(!pro){
+    var sm = [];
+    if(r.vendidoSimpleMes) sm.push('vendiste ' + fARS(r.vendidoSimpleMes));
+    if(r.gastadoMes) sm.push('gastaste ' + fARS(r.gastadoMes));
+    if(sm.length) h += '<div class="nota tj-modo-nota" style="padding-top:10px">En ' + mc + ': ' + sm.join(' · ') + '</div>';
+  }
   if(pro){
     var pm = [];
     if(r.facturadoMes) pm.push('facturaste ' + fARS(r.facturadoMes));
@@ -4121,6 +4245,8 @@ function renderTrabajo(){
     var lista = function(arr, max){ var o = ''; for(var k=0;k<arr.length && k<max;k++) o += filaVenta(arr[k]); return o + (arr.length > max ? '<div class="nota">Se muestran las ' + max + ' más nuevas.</div>' : ''); };
     if(pro){
       var hp = ''; for(i=0;i<pend.length;i++) hp += filaFac(pend[i]);
+      var cz = cobranza();
+      if(cz.clientes.length || cz.echeqs.length) h += plegTj('tjCobr', 'Cobranza de la semana', cz.clientes.length ? String(cz.clientes.length) : '', cuerpoCobranza(cz));
       h += plegTj('tjPend', 'Por cobrar', pend.length ? fARS(r.porCobrar) : '', hp || '<div class="tj-vacio">No tenés nada pendiente de cobro.</div>');
       h += plegTj('tjMono', 'Monotributo', T.tope ? fPct(r.facturado12 / T.tope) : '', cuerpoMono(r));
       h += plegTj('tjFact', 'Facturas', facts.length ? String(facts.length) : '', facts.length ? lista(facts, 40) : '<div class="tj-vacio">Todavía no cargaste ninguna factura.</div>');
@@ -4208,17 +4334,22 @@ function totalFx(){
 }
 function abrirFactura(id){
   var f = id ? facPorId(id) : null;
-  fx = {id: f ? f.id : null, tipo:'factura', plazo: f ? (f.contado ? 0 : f.plazo) : 30, forma: f ? f.forma : 'transferencia'};
+  fx = {id: f ? f.id : null, tipo:'factura', plazo: f ? (f.contado ? 0 : f.plazo) : 30, forma: f ? f.forma : 'transferencia', abono: !!(f && f.abono)};
+  var sug = f ? '' : siguienteNumero(), origen = f && f.abonoDe ? facPorId(f.abonoDe) : null;
   var otro = PLAZOS.indexOf(fx.plazo) < 0;
   abrirHoja('<h3>' + (f ? 'Editar factura' : 'Nueva factura') + '</h3>'
     + campoTj('Cliente', '<input type="text" id="fxCliente" class="tj-in" list="tjClientes" autocomplete="off" placeholder="A quién le facturaste" value="' + (f ? esc(f.cliente) : '') + '">')
     + campoTj('Monto', '<input type="text" id="fxMonto" class="tj-in" inputmode="decimal" autocomplete="off"' + attrMonto(f ? f.monto : 0) + '>')
-    + campoTj('Número de factura (si querés)', '<input type="text" id="fxNumero" class="tj-in" autocomplete="off" placeholder="0012" value="' + (f ? esc(f.numero) : '') + '">')
+    + campoTj(sug ? 'Número de factura (sigue a la anterior)' : 'Número de factura (si querés)', '<input type="text" id="fxNumero" class="tj-in" autocomplete="off" placeholder="0012" value="' + esc(f ? f.numero : sug) + '">')
     + campoTj('Qué es (si querés)', '<input type="text" id="fxConcepto" class="tj-in" autocomplete="off" placeholder="Placas, reparación, abono…" value="' + (f ? esc(f.concepto) : '') + '">')
     + campoTj('Fecha de la factura', '<input type="date" id="fxFecha" class="tj-in" value="' + (f ? f.fecha : hoyISO()) + '">')
     + '<label class="tj-lb">A cuántos días te paga</label><div class="chips" id="fxPlazo">' + chipsPlazo(otro) + '</div>'
     + '<input type="text" id="fxDias" class="tj-in" inputmode="numeric" autocomplete="off" placeholder="Cantidad de días" style="display:' + (otro ? 'block' : 'none') + '" value="' + (otro ? fx.plazo : '') + '">'
     + '<label class="tj-lb">Cómo te paga</label><div class="chips" id="fxForma">' + chipsForma(fx.forma, 'tjFxForma') + '</div>'
+    + (f && f.abonoDe ? '<div class="nota" style="padding:0 2px 12px">Se generó sola desde el abono' + (origen ? ' de ' + esc(origen.cliente) : '') + '.</div>'
+       : '<label class="tj-lb">¿Se repite todos los meses?</label><div class="seg" id="fxAbono" style="margin-bottom:14px">'
+       + '<button data-act="tjFxAbono" data-v="0" class="' + (fx.abono ? '' : 'on') + '">No</button>'
+       + '<button data-act="tjFxAbono" data-v="1" class="' + (fx.abono ? 'on' : '') + '">Sí, es un abono</button></div>')
     + '<div class="nota" id="fxNota" style="padding:0 0 14px"></div>'
     + '<div class="fila">' + (f ? '<button class="mal" data-act="tjBorrarFac" data-id="' + esc(f.id) + '">Borrar</button>' : '<button data-act="cerrarHoja">Cancelar</button>')
     + '<button class="pri" data-act="tjGuardarFac">Guardar</button></div>' + datalistClientes());
@@ -4232,8 +4363,9 @@ function notaFx(){
   var e = document.getElementById('fxNota'); if(!e || fx.tipo !== 'factura') return;
   var fe = val('fxFecha'); if(!esISO(fe)) fe = hoyISO();
   e.className = 'nota';
-  e.innerHTML = fx.plazo ? 'Te la tienen que pagar el <b>' + fDia(sumarDias(fe, fx.plazo)) + '</b>, a ' + fx.plazo + ' días de la factura.'
-                         : 'Contado: queda cobrada en el acto y la plata ya cuenta como tuya.';
+  e.innerHTML = (fx.plazo ? 'Te la tienen que pagar el <b>' + fDia(sumarDias(fe, fx.plazo)) + '</b>, a ' + fx.plazo + ' días de la factura.'
+                          : 'Contado: queda cobrada en el acto y la plata ya cuenta como tuya.')
+    + (fx.abono ? ' Todos los meses se va a generar sola una igual, con el número siguiente.' : '');
 }
 function errorEn(id, txt){ var e = document.getElementById(id); if(e){ e.className = id === 'cbRes' ? 'tj-res mal' : 'nota mal'; e.innerHTML = txt; } }
 function guardarFac(){
@@ -4264,14 +4396,23 @@ function guardarFac(){
     var mismo = viejo && Math.round(viejo.monto) === m;
     datos = {tipo:'factura', cliente:cli, numero:val('fxNumero').trim(), concepto:val('fxConcepto').trim(), monto:m,
              cantidad: mismo ? viejo.cantidad : 1, precio: mismo ? viejo.precio : m, fecha:fe, contado:contado, plazo:fx.plazo, forma:fx.forma};
+    if(!(viejo && viejo.abonoDe)){
+      datos.abono = fx.abono;
+      if(fx.abono && !(viejo && viejo.abono)){
+        // si ya había sido abono, sigue desde donde quedó; si es nuevo, desde el mes de esta factura
+        var desde = fe.slice(0,7), previo = viejo && viejo.abonoHasta ? viejo.abonoHasta : '';
+        datos.abonoHasta = previo > desde ? previo : desde;
+      }
+    }
   }
   antesDeCambiar();
   var nomViejo = viejo ? viejo.cliente : '';
   if(viejo){ for(var k in datos) viejo[k] = datos[k]; }
   else { datos.id = tjId(); datos.creada = new Date().toISOString(); if(fx.tipo === 'simple') datos.cliente = ''; T.facturas.push(datos); }
+  var gen = datos.abono ? generarAbonos() : 0;
   guardarTrab(true); cerrarHoja(); renderTrabajo();
   var que = fx.tipo === 'simple' ? 'Venta' : 'Factura';
-  toast(viejo ? que + ' actualizada' : que + ' de ' + fARS(m) + ' guardada', 'Deshacer', 'tjDeshacer');
+  toast((viejo ? que + ' actualizada' : que + ' de ' + fARS(m) + ' guardada') + (gen ? ' y ' + gen + (gen === 1 ? ' abono generado' : ' abonos generados') : ''), 'Deshacer', 'tjDeshacer');
   if(viejo && fx.tipo === 'factura' && nomViejo && clave(nomViejo) !== clave(datos.cliente)) ofrecerRenombrar(nomViejo, datos.cliente, viejo.id);
 }
 function ofrecerRenombrar(de, a, salvo){
@@ -4329,22 +4470,54 @@ function verFactura(id){
     + renglon('Total', fARS(f.monto)) + renglon('Fecha', fDia(f.fecha))
     + renglon('Plazo', f.contado ? 'Contado' : f.plazo ? f.plazo + ' días · ' + fDia(venceFac(f)) : 'El mismo día')
     + renglon('Cómo te paga', nombreForma(f.forma))
+    + (f.abono ? renglon('Abono', 'Se repite todos los meses') : f.abonoDe ? renglon('Abono', 'Generada sola') : '')
     + (rec ? renglon('Cobrado', fARS(rec)) : '') + (ret ? renglon('Retenido', fARS(ret)) : '')
     + renglon('Falta cobrar', s ? '<span class="' + (v.mal && !oculto ? 'neg' : '') + '">' + fARS(s) + '</span>'
                                 : (acreditaEl(f) ? '<span>Nada: se acredita el ' + fDia(acreditaEl(f)) + '</span>' : '<span class="ok">Nada, está cobrada</span>'))
     + '</div>' + (s ? '<div class="nota ' + (v.mal ? 'mal' : '') + '" style="padding:0 2px 12px">' + v.t + '.</div>' : '')
     + (hc ? '<label class="tj-lb">Cobros de esta factura</label><div class="tj-caja">' + hc + '</div>' : '')
-    + '<button class="tj-linea" style="margin:0 0 12px" data-act="tjRepetir" data-id="' + esc(f.id) + '">Repetir el mes que viene (' + fDia(mesSiguiente(f.fecha)) + ')</button>'
+    + (f.abono ? '<button class="tj-linea" style="margin:0 0 12px" data-act="tjAbonoOff" data-id="' + esc(f.id) + '">Dejar de repetirla todos los meses</button>'
+               : '<button class="tj-linea" style="margin:0 0 12px" data-act="tjRepetir" data-id="' + esc(f.id) + '">Repetir el mes que viene (' + fDia(mesSiguiente(f.fecha)) + ')</button>')
     + '<div class="fila"><button class="mal" data-act="tjBorrarFac" data-id="' + esc(f.id) + '">Borrar</button>'
     + '<button class="pri" data-act="tjEditarFac" data-id="' + esc(f.id) + '">Editar</button></div>');
+}
+function fechaEnMes(iso, ym){
+  var dim = new Date(Date.UTC(+ym.slice(0,4), +ym.slice(5,7), 0)).getUTCDate();
+  return ym + '-' + dos(Math.min(+iso.slice(8,10), dim));
+}
+function generarAbonos(){
+  // cada abono se copia solo en los meses que faltan, hasta el de hoy; lo que borres no vuelve a aparecer
+  if(!T || !T.activo) return 0;
+  var hoyM = hoyISO().slice(0,7), nuevas = 0, i, guard;
+  for(i=0;i<T.facturas.length;i++){
+    var f = T.facturas[i];
+    if(!f.abono || f.tipo !== 'factura') continue;
+    var ym = f.abonoHasta || f.fecha.slice(0,7); guard = 0;
+    var hay = {}; hay[f.fecha.slice(0,7)] = 1;
+    for(var j=0;j<T.facturas.length;j++) if(T.facturas[j].abonoDe === f.id) hay[T.facturas[j].fecha.slice(0,7)] = 1;
+    while(ym < hoyM && guard++ < 120){
+      ym = mesSiguiente(ym + '-01').slice(0,7);
+      if(hay[ym]) continue;   // ese mes ya tiene su copia: nunca dos del mismo abono
+      var n = {id:tjId(), creada:new Date().toISOString(), tipo:'factura', cliente:f.cliente, concepto:f.concepto, monto:f.monto,
+               cantidad:f.cantidad, precio:f.precio, contado:f.contado, plazo:f.plazo, forma:f.forma, fecha:fechaEnMes(f.fecha, ym),
+               numero: f.numero ? siguienteNumero() : '', abono:false, abonoHasta:'', abonoDe:f.id};
+      T.facturas.push(n); nuevas++;
+    }
+    f.abonoHasta = hoyM;
+  }
+  if(nuevas) guardarTrab(true);
+  return nuevas;
 }
 function repetirFac(id){
   var f = facPorId(id); if(!f) return;
   antesDeCambiar();
   var n = {}; for(var k in f) n[k] = f[k];
-  n.id = tjId(); n.creada = new Date().toISOString(); n.fecha = mesSiguiente(f.fecha); n.numero = '';
+  // una factura repetida a mano es una factura común: no hereda nada de los abonos (si no, se duplicarían)
+  n.id = tjId(); n.creada = new Date().toISOString(); n.fecha = mesSiguiente(f.fecha);
+  n.abono = false; n.abonoHasta = ''; n.abonoDe = '';
+  n.numero = f.numero ? siguienteNumero() : '';
   T.facturas.push(n); guardarTrab(true); cerrarHoja(); renderTrabajo();
-  toast('Copié la factura al ' + fDia(n.fecha) + ', sin número', 'Deshacer', 'tjDeshacer');
+  toast('Copié la factura al ' + fDia(n.fecha) + (n.numero ? ' con el número ' + n.numero : ', sin número'), 'Deshacer', 'tjDeshacer');
 }
 
 function abrirCobro(id){
@@ -4752,6 +4925,11 @@ function accionTj(a, b){
   if(a === 'tjTopeQuitar'){ guardarTope(true); return; }
   if(a === 'tjRepetir'){ repetirFac(id); return; }
   if(a === 'tjCSV'){ csvTrabajo(); return; }
+  if(a === 'tjFxAbono'){ fx.abono = v === '1'; marcarChips('fxAbono', b); notaFx(); return; }
+  if(a === 'tjAbonoOff'){ var fa = facPorId(id); if(fa){ antesDeCambiar(); fa.abono = false; guardarTrab(true); cerrarHoja(); renderTrabajo(); toast('Listo: no se repite más', 'Deshacer', 'tjDeshacer'); } return; }
+  if(a === 'tjRecordar'){ abrirRecordar(b.getAttribute('data-k')); return; }
+  if(a === 'tjCopiarMsg'){ copiarTexto(val('rcTexto')); return; }
+  if(a === 'tjEnviarMsg'){ enviarTexto(val('rcTexto')); return; }
 }
 
 /* ═══ 14 · arranque ═══════════════════════════════════ */
@@ -4760,7 +4938,9 @@ catch(e){ hayLS = false; }
 
 D = leerEmbebido();
 T = leerTrab();
+var abonosNuevos = generarAbonos();
 aplicarModo();
+if(abonosNuevos) setTimeout(function(){ toast((abonosNuevos === 1 ? 'Se generó 1 abono' : 'Se generaron ' + abonosNuevos + ' abonos') + ' en Trabajo'); }, 900);
 aplicarTema();
 aplicarOculto();
 render();
