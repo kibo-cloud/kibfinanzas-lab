@@ -31,7 +31,7 @@ una app vacía.
 
 ## Versión para PC
 
-Ajustes → **Guardar la versión para PC** genera un `kibfinanzas-AAAA.html`: la app
+Ajustes → **Guardar la versión para PC** genera un `kibfinanzas-lab-AAAA.html`: la app
 entera en un archivo, con los datos del año abierto embebidos entre
 `/*DATOS_INICIO*/` y `/*DATOS_FIN*/`. Se abre con doble clic en cualquier
 computadora, sin instalar nada. Es una foto del momento: no se sincroniza.
@@ -50,7 +50,10 @@ el .apk. Del zip que te da, copiá assetlinks.json a una carpeta
 
 ## CHANGELOG
 
-L3 · 2026-09-10 — La pestaña Trabajo pasa a hablar de ventas: cantidad por precio, cobradas en el momento (sirve para una feria) o a plazo, como las facturas de antes. Nuevo "Pasar a lo personal": lo ya cobrado se suma a Ingresos del mes en el renglón "Del trabajo" y cuenta como cualquier ingreso.
+L6.5 · 2026-09-11 — Pulido después de una prueba de uso completa: el renglón "Del trabajo" en Mes queda bloqueado mientras tenga pases y no se copia al mes siguiente; con el ojito cerrado, al editar no se ven los montos; gastos y echeqs con fecha futura quedan marcados; clientes se reconocen sin tildes y se pueden renombrar en todas sus facturas; montos mal escritos avisan claro; montos largos entran; pasar a lo personal respeta el año abierto; el CSV separa lo cobrado de lo que se acredita después; el estado de arriba y el cartel de "app vacía" tienen en cuenta lo del trabajo; los CSV y el título de la ventana llevan "Lab" para no mezclarse con los de la app real.
+L5 · 2026-09-11 — Gastos del trabajo (en pesos o en dólares con su cotización) que se restan del disponible; en Simple, vendido, gastado y cuánto te quedó en el mes. En Profesional: tope del monotributo con barra, cuánto tarda cada cliente en pagar, aviso de lo que vence en la semana, puntito rojo si hay algo vencido y "Repetir el mes que viene" para los abonos. Exportar lo del trabajo en CSV para el contador.
+L4 · 2026-09-10 — Arriba de Trabajo se elige Simple o Profesional. Simple: ventas sueltas con cantidad y precio, siempre cobradas. Profesional: facturas con cliente, plazos y cobros como en la L2, y el plazo Contado las deja cobradas en el acto. Pasar a lo personal funciona en los dos; cambiar de modo no borra nada.
+L3 · 2026-09-10 — La pestaña Trabajo pasa a hablar de ventas: cantidad por precio, cobradas en el momento o a plazo, como las facturas de antes. Nuevo "Pasar a lo personal": lo ya cobrado se suma a Ingresos del mes en el renglón "Del trabajo" y cuenta como cualquier ingreso.
 L2 · 2026-09-10 — Modo cuenta propia, primera parte: en Ajustes se prende "Trabajo por mi cuenta" y aparece la pestaña Trabajo, con facturas a plazo, lo vencido y lo que entra en 30 días, y "Entró un pago", que sugiere de qué facturas es un cobro y separa retención de saldo pendiente. Va en la copia de seguridad y no toca los números del mes. El deslizamiento entre pestañas pasa por Trabajo solo si el modo está prendido, y ya no se traba cuando el dedo arranca sobre un renglón cortado con puntos suspensivos.
 L1 · 2026-09-10 — Nace la Lab a partir de la v1.28: mismo motor, pero con datos, caché e historial de copias separados de la app real, ícono violeta y nombre "kibFinanzas Lab" para no confundirlas en el teléfono.
 v1.28 · 2026-09-09 — Se cambia de pestaña deslizando el dedo para los costados, sin tocar los botones de abajo. El gesto respeta lo que ya se mueve al costado (la tira de meses, las tablas anchas) y no actúa con una hoja abierta. Dentro de una subpantalla de Ajustes, deslizar a la derecha vuelve al principio.
