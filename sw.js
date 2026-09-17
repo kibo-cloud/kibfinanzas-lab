@@ -1,9 +1,9 @@
-/* kibFinanzas Lab · service worker
+/* kibFinanzas · service worker
    Deja la app entera en caché para que abra sin conexión y la actualiza
    en segundo plano cuando hay señal. Los datos no pasan por acá: viven
    en el almacenamiento del navegador. */
-var VERSION = 'kibfinanzas-lab-v7.1';
-var PREFIJO = 'kibfinanzas-lab-';   // solo borra cachés que empiecen con esto: la app real vive en la misma dirección base
+var VERSION = 'kibfinanzas-offline-v35';
+var PREFIJO = 'kibfinanzas-offline-';   // solo borra cachés que empiecen con esto: la app real vive en la misma dirección base
 var BASE = ['./', './index.html', './manifest.webmanifest', './favicon-64.png', './privacidad.html',
             './icono-192.png', './icono-512.png', './maskable-512.png', './apple-180.png'];
 
